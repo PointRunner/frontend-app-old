@@ -1,0 +1,6 @@
+{
+	"appId": "io.ionic.starter",
+	"appName": "PointRunner",
+	"webDir": "build",
+	"bundledWebRuntime": false
+}

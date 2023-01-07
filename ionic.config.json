@@ -1,0 +1,8 @@
+{
+  "name": "PointRunner",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react",
+  "id": "3902b69a"
+}
