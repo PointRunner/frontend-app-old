@@ -1,5 +1,5 @@
 {
-	"appId": "io.ionic.starter",
+	"appId": "com.shadowmuffin.pointrunner",
 	"appName": "PointRunner",
 	"webDir": "build",
 	"bundledWebRuntime": false
