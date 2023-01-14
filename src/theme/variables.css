@@ -2,14 +2,25 @@
 http://ionicframework.com/docs/theming/ */
 
 /** Ionic CSS Variables **/
+
+@font-face {
+  font-family: 'Primary';
+  src: url('../assets/fonts/Comfortaa-VariableFont_wght.ttf');
+  font-style: normal;
+  font-weight: bold;
+}
+
+
 :root {
+  font-family: 'Primary';
+  --ion-font-family: 'Primary';
   /** primary **/
-  --ion-color-primary: #3880FF;
-  --ion-color-primary-rgb: 56, 128, 255;
+  --ion-color-primary: #37ac0a;
+  --ion-color-primary-rgb: 55, 172, 10;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #3171e0;
-  --ion-color-primary-tint: #4c8dff;
+  --ion-color-primary-shade: #328f0e;
+  --ion-color-primary-tint: #47cf11;
 
   /** secondary **/
   --ion-color-secondary: #3dc2ff;
@@ -83,6 +94,7 @@ http://ionicframework.com/docs/theming/ */
    */
 
   body {
+    --ion-grid-padding: 0;
     --ion-color-primary: #afccff;
     --ion-color-primary-rgb: 175, 204, 255;
     --ion-color-primary-contrast: #000000;
