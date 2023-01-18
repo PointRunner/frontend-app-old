@@ -14,16 +14,14 @@ import Feature from 'ol/Feature';
 import { Geometry } from 'ol/geom';
 import styled from 'styled-components';
 
-
 const MapWrapperDiv = styled.div`
-  position: absolute;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  bottom: 0;
-`
-
+	position: absolute;
+	z-index: -1;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	bottom: 0;
+`;
 
 function MapWrapper(props: { features: Feature<Geometry>[] }) {
 	// set intial state
@@ -36,8 +34,8 @@ function MapWrapper(props: { features: Feature<Geometry>[] }) {
 
 	// create state ref that can be accessed in OpenLayers onclick callback function
 	//  https://stackoverflow.com/a/60643670
-	const mapRef = useRef<Map>(null);
-
+	const mapRef = useRef<Map | null>();
+  mapRef.current = map;
 	// initialize map on first render - logic formerly put into componentDidMount
 	useEffect(() => {
 		// create and add vector source layer
@@ -104,17 +102,19 @@ function MapWrapper(props: { features: Feature<Geometry>[] }) {
 
 	// map click handler
 	const handleMapClick = (event: { pixel: any }) => {
-		// get clicked coordinate using mapRef to access current React state inside OpenLayers callback
-		//  https://stackoverflow.com/a/60643670
-		const clickedCoord = mapRef.current!.getCoordinateFromPixel(event.pixel);
+		if (mapRef.current) {
+			// get clicked coordinate using mapRef to access current React state inside OpenLayers callback
+			//  https://stackoverflow.com/a/60643670
+			const clickedCoord = mapRef.current.getCoordinateFromPixel(event.pixel);
 
-		// transform coord to EPSG 4326 standard Lat Long
-		const transormedCoord = transform(clickedCoord, 'EPSG:3857', 'EPSG:4326');
+			// transform coord to EPSG 4326 standard Lat Long
+			const transormedCoord = transform(clickedCoord, 'EPSG:3857', 'EPSG:4326');
 
-		// set React state
-		setSelectedCoord(transormedCoord);
+			// set React state
+			setSelectedCoord(transormedCoord);
 
-		console.log(transormedCoord);
+			console.log(transormedCoord);
+		}
 	};
 
 	// render component
