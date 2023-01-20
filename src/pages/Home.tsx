@@ -7,7 +7,7 @@ const Home: React.FC = () => {
 	return (
 		<>
 			<TopBar />
-			<Map features={[]} />
+			<Map />
             <BottomBar />
 		</>
 	);
