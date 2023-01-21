@@ -5,10 +5,10 @@ import Map from 'ol/Map';
 import View from 'ol/View';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
-import {Draw} from 'ol/interaction'
 import VectorSource from 'ol/source/Vector';
 import XYZ from 'ol/source/XYZ';
-import GeoJSON from 'ol/format/GeoJSON'
+import GeoJSON from 'ol/format/GeoJSON';
+import Polyline from 'ol/format/Polyline';
 import { transform } from 'ol/proj';
 import { Coordinate } from 'ol/coordinate';
 import { Geometry, Point } from 'ol/geom';
@@ -20,6 +20,7 @@ import UserLocationIcon from '../../../assets/images/UI/userLocationIcon.png';
 import NextPointLocationIcon from '../../../assets/images/UI/nextPointIcon.png';
 import Feature from 'ol/Feature';
 import MapBrowserEvent from 'ol/MapBrowserEvent';
+import Stroke from 'ol/style/Stroke';
 
 const MapWrapperDiv = styled.div`
 	position: absolute;
@@ -48,39 +49,159 @@ const nextLocationMapPin = new Style({
 	}),
 });
 
+const routeStyle = new Style({
+	stroke: new Stroke({
+		width: 5,
+	}),
+});
+
+interface INearestResponse {
+	code: string;
+	waypoints?: {
+		hint?: string;
+		distance: number;
+		name?: string;
+		location?: number[];
+	}[];
+}
+
+interface IRouteResponse {
+	code: string;
+	routes?: {
+		distance: number;
+		duration: number;
+		geometry: {
+			type: 'string';
+			coordinates: Coordinate[];
+		};
+	}[];
+}
+
+interface IRouteGeometry {
+	type: string;
+	coordinates: Coordinate[];
+}
+
+interface CoordAndFeature {
+	coordinates: Coordinate;
+	feature: Feature;
+}
+
 const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useState<Coordinate>();
 
 	const mapElement: LegacyRef<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
 	const featuresLayerSourceRef = useRef<VectorSource<Geometry>>();
-	const userLocationRef = useRef<Feature | null>();
-	const nextPointLocationRef = useRef<Feature | null>();
+	const userLocationRef = useRef<CoordAndFeature | null>();
+	const nextPointLocationRef = useRef<CoordAndFeature | null>();
+	const routeFeatureRef = useRef<Feature | null>();
 
-	const updateMapIcon = useCallback(
+	const getNearestFromApi = (coords: Coordinate): Promise<Coordinate> => {
+		/*
+			Get the nearest point on a street network for a given coordinate.
+
+			@param coords - Initial coordinate
+
+			@returns Promise<Coordinate> - Nearest coordinate on a street.
+		*/
+		return new Promise((resolve, reject) => {
+			const longLat = transform(coords, 'EPSG:3857', 'EPSG:4326');
+			fetch(`http://router.project-osrm.org/nearest/v1/walking/${longLat.join()}`)
+				.then((resp: Response) => {
+					return resp.json();
+				})
+				.then((data: INearestResponse) => {
+					if (data.code !== 'Ok') reject();
+					else {
+						const transformedResponseCoords = transform(
+							data.waypoints![0].location!,
+							'EPSG:4326',
+							'EPSG:3857'
+						);
+						resolve(transformedResponseCoords);
+					}
+				})
+				.catch(() => reject());
+		});
+	};
+
+	const getRouteFromApi = (start: Coordinate, end: Coordinate): Promise<IRouteGeometry> => {
+		/*
+			Get an optimal route from the OSRM API.
+			@param start - Start EPSG:3857 coordinate.
+			@param end - End EPSG:3857 coordinate.
+
+			@returns Promise<IRouteGeometry> - Polyline-ready object with the correct route.
+		*/
+		const points = [
+			transform(start, 'EPSG:3857', 'EPSG:4326'),
+			transform(end, 'EPSG:3857', 'EPSG:4326'),
+		];
+		return new Promise((resolve, reject) => {
+			fetch(`http://router.project-osrm.org/route/v1/walking/${points.join(';')}`)
+				.then((resp: Response) => {
+					return resp.json();
+				})
+				.then((data: IRouteResponse) => {
+					console.log(data)
+					if (data.code !== 'Ok') reject();
+					else {
+						
+						resolve(data.routes![0].geometry);
+					}
+				})
+				.catch(() => reject());
+		});
+	};
+
+	const drawRoute = (foundRoute: IRouteGeometry) => {
+		/*
+			Draw a route on the map after a route has been found by the API
+
+			@param foundRoute - Route that has been found, already in EPSG:3857
+		*/
+		const routePolyline = new Polyline({ factor: 1e5 }).readGeometry(foundRoute, {
+			dataProjection: 'EPSG:4326',
+			featureProjection: 'EPSG:3857',
+		});
+		const routeFeature = new Feature({ type: 'route', geometry: routePolyline });
+		routeFeature.setStyle(routeStyle);
+		featuresLayerSourceRef.current?.addFeature(routeFeature);
+		routeFeatureRef.current = routeFeature;
+	};
+
+	const clearPreviousRoute = () => {
+		/* Remove the previous route from the map if it exists */
+		if (routeFeatureRef.current) 
+			featuresLayerSourceRef.current?.removeFeature(routeFeatureRef.current);
+	}
+
+	const updateLocationRef = useCallback(
 		(
 			coordinates: Coordinate | undefined,
-			ref: React.MutableRefObject<Feature<Geometry> | null | undefined>,
+			ref: React.MutableRefObject<CoordAndFeature | null | undefined>,
 			pinStyle: Style
 		) => {
 			/*
-		Update an existing icon on the map, and create a new one if one doesn't already exist.
+		Update an existing location ref, and create a new one if one doesn't already exist.
 
 		@param coordinates - Updated coordinate to be used.
-		@param ref - Reference to the location on the map.
+		@param ref - Reference to the location.
 		@param pinStyle - The correct style (image) to use for the pin (if a new pin is created). 
 		*/
 			if (!mapRef.current || !coordinates) return;
 			if (!ref.current) {
-				ref.current = new Feature({
+				const feature = new Feature({
 					geometry: new Point(coordinates),
 				});
-				ref.current.setStyle(pinStyle);
-				featuresLayerSourceRef.current?.addFeature(ref.current);
+				feature.setStyle(pinStyle);
+				featuresLayerSourceRef.current?.addFeature(feature);
+				ref.current = { feature: feature, coordinates: coordinates };
 			} else {
-				ref.current.setGeometry(new Point(coordinates));
+				ref.current.coordinates = coordinates;
+				ref.current.feature.setGeometry(new Point(coordinates));
 			}
-			console.log("Features: ", featuresLayerSourceRef.current?.getFeatures());
 		},
 		[featuresLayerSourceRef]
 	);
@@ -90,8 +211,8 @@ const MapWrapper: React.FC = () => {
 			Re-center the map according to the location of the user whenever it changes.
 		*/
 		mapRef.current?.getView().setCenter(userLocation);
-		updateMapIcon(userLocation, userLocationRef, userMapPin);
-	}, [featuresLayerSourceRef, updateMapIcon, userLocation]);
+		updateLocationRef(userLocation, userLocationRef, userMapPin);
+	}, [featuresLayerSourceRef, updateLocationRef, userLocation]);
 
 	Geolocation.watchPosition({ enableHighAccuracy: true }, (newLocation: Position | null) => {
 		if (newLocation) {
@@ -112,21 +233,27 @@ const MapWrapper: React.FC = () => {
 			@param event - Browser click event.
 			*/
 			if (!mapRef.current) return;
-			updateMapIcon(event.coordinate, nextPointLocationRef, nextLocationMapPin);
+			getNearestFromApi(event.coordinate).then((nearestPoint: Coordinate) => {
+				updateLocationRef(nearestPoint, nextPointLocationRef, nextLocationMapPin);
+				getRouteFromApi(userLocationRef.current!.coordinates, nearestPoint).then((foundRoute: IRouteGeometry) => {
+					clearPreviousRoute();
+					drawRoute(foundRoute)
+				}
+				);
+			});
 		},
-		[updateMapIcon]
+		[updateLocationRef]
 	);
 
 	useEffect(() => {
 		if (mapElement.current && !mapRef.current) {
 			const featureLayersSource = new VectorSource({
 				format: new GeoJSON({
-					dataProjection: 'EPSG:3857'
-				})
+					dataProjection: 'EPSG:3857',
+				}),
 			});
 			const initalFeaturesLayer = new VectorLayer({
 				source: featureLayersSource,
-				
 			});
 			initalFeaturesLayer.set('name', 'features');
 			mapRef.current = new Map({
