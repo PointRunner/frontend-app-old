@@ -15,12 +15,15 @@ import { Geometry, Point } from 'ol/geom';
 import styled from 'styled-components';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
-
-import UserLocationIcon from '../../../assets/images/UI/userLocationIcon.png';
-import NextPointLocationIcon from '../../../assets/images/UI/nextPointIcon.png';
 import Feature from 'ol/Feature';
 import MapBrowserEvent from 'ol/MapBrowserEvent';
 import Stroke from 'ol/style/Stroke';
+
+
+import UserLocationIcon from '../../../assets/images/UI/userLocationIcon.png';
+import NextPointLocationIcon from '../../../assets/images/UI/nextPointIcon.png';
+import {CoordAndFeature, INearestResponse, IRouteGeometry, IRouteResponse} from './MapWrapper.d'
+
 
 const MapWrapperDiv = styled.div`
 	position: absolute;
@@ -55,37 +58,6 @@ const routeStyle = new Style({
 	}),
 });
 
-interface INearestResponse {
-	code: string;
-	waypoints?: {
-		hint?: string;
-		distance: number;
-		name?: string;
-		location?: number[];
-	}[];
-}
-
-interface IRouteResponse {
-	code: string;
-	routes?: {
-		distance: number;
-		duration: number;
-		geometry: {
-			type: 'string';
-			coordinates: Coordinate[];
-		};
-	}[];
-}
-
-interface IRouteGeometry {
-	type: string;
-	coordinates: Coordinate[];
-}
-
-interface CoordAndFeature {
-	coordinates: Coordinate;
-	feature: Feature;
-}
 
 const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useState<Coordinate>();
@@ -96,6 +68,9 @@ const MapWrapper: React.FC = () => {
 	const userLocationRef = useRef<CoordAndFeature | null>();
 	const nextPointLocationRef = useRef<CoordAndFeature | null>();
 	const routeFeatureRef = useRef<Feature | null>();
+
+	
+
 
 	const getNearestFromApi = (coords: Coordinate): Promise<Coordinate> => {
 		/*
@@ -139,15 +114,13 @@ const MapWrapper: React.FC = () => {
 			transform(end, 'EPSG:3857', 'EPSG:4326'),
 		];
 		return new Promise((resolve, reject) => {
-			fetch(`http://router.project-osrm.org/route/v1/walking/${points.join(';')}`)
+			fetch(`http://router.project-osrm.org/route/v1/foot/${points.join(';')}`)
 				.then((resp: Response) => {
 					return resp.json();
 				})
 				.then((data: IRouteResponse) => {
-					console.log(data)
 					if (data.code !== 'Ok') reject();
 					else {
-						
 						resolve(data.routes![0].geometry);
 					}
 				})
@@ -173,9 +146,9 @@ const MapWrapper: React.FC = () => {
 
 	const clearPreviousRoute = () => {
 		/* Remove the previous route from the map if it exists */
-		if (routeFeatureRef.current) 
+		if (routeFeatureRef.current)
 			featuresLayerSourceRef.current?.removeFeature(routeFeatureRef.current);
-	}
+	};
 
 	const updateLocationRef = useCallback(
 		(
@@ -235,10 +208,11 @@ const MapWrapper: React.FC = () => {
 			if (!mapRef.current) return;
 			getNearestFromApi(event.coordinate).then((nearestPoint: Coordinate) => {
 				updateLocationRef(nearestPoint, nextPointLocationRef, nextLocationMapPin);
-				getRouteFromApi(userLocationRef.current!.coordinates, nearestPoint).then((foundRoute: IRouteGeometry) => {
-					clearPreviousRoute();
-					drawRoute(foundRoute)
-				}
+				getRouteFromApi(userLocationRef.current!.coordinates, nearestPoint).then(
+					(foundRoute: IRouteGeometry) => {
+						clearPreviousRoute();
+						drawRoute(foundRoute);
+					}
 				);
 			});
 		},
@@ -278,7 +252,11 @@ const MapWrapper: React.FC = () => {
 		}
 	}, [handleMapClick]);
 
-	return <MapWrapperDiv ref={mapElement} className="map-container"></MapWrapperDiv>;
+	return (
+		<>
+			<MapWrapperDiv ref={mapElement} className="map-container"></MapWrapperDiv>
+		</>
+	);
 };
 
 export default MapWrapper;
