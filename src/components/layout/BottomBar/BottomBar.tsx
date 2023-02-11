@@ -11,9 +11,25 @@ import {
 	BottomBarInputs,
 	BottomBarInput,
 	BottomBarInputWrapper,
+	BottomBarMenuButtons,
+	BottomBarMenuButton,
 } from './Styles.BottomBar';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import {
+	generateRouteFunction,
+	maxDistanceParam,
+	maxHeadingParam,
+	minDistanceParam,
+	minHeadingParam,
+} from '../../../utils/State';
 
 const BottomBar = () => {
+	const [maxDistance, setMaxDistance] = useRecoilState(maxDistanceParam);
+	const [minDistance, setMinDistance] = useRecoilState(minDistanceParam);
+	const [maxHeading, setMaxHeading] = useRecoilState(maxHeadingParam);
+	const [minHeading, setMinHeading] = useRecoilState(minHeadingParam);
+	const generateRouteFunc = useRecoilValue(generateRouteFunction);
+
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
 	const [currentlySelectedButton, setCurrentlySelectedButton] =
 		useState<HTMLButtonElement | null>(null);
@@ -42,6 +58,9 @@ const BottomBar = () => {
 	};
 
 	useEffect(() => {
+		/*
+			Change the action icons to either their original image or the back icon.
+		*/
 		const originalButtonIcons: { [key: string]: string } = {
 			'select-point': PinpointIconUrl,
 			'random-point': RandomIconUrl,
@@ -84,15 +103,58 @@ const BottomBar = () => {
 			<BottomBarInputs>
 				<BottomBarInputWrapper className="first">
 					<label>Minimum Distance</label>
-					<BottomBarInput />
-                    <label>KM</label>
+					<div>
+						<BottomBarInput
+							value={minDistance}
+							onChange={(e) => setMinDistance(parseFloat(e.target.value))}
+							type="number"
+						/>
+						<label>KM</label>
+					</div>
 				</BottomBarInputWrapper>
 				<BottomBarInputWrapper>
 					<label>Maximum Distance</label>
-					<BottomBarInput />
-                    <label>KM</label>
+					<div>
+						<BottomBarInput
+							value={maxDistance}
+							onChange={(e) => setMaxDistance(parseFloat(e.target.value))}
+							type="number"
+						/>
+						<label>KM</label>
+					</div>
+				</BottomBarInputWrapper>
+				<BottomBarInputWrapper>
+					<label>Minimum Heading</label>
+					<div>
+						<BottomBarInput
+							value={minHeading}
+							onChange={(e) => setMinHeading(parseInt(e.target.value))}
+							type="number"
+							min="0"
+							max="359"
+						/>
+						<label>Deg</label>
+					</div>
+				</BottomBarInputWrapper>
+				<BottomBarInputWrapper>
+					<label>Maximum Heading</label>
+					<div>
+						<BottomBarInput
+							value={maxHeading}
+							onChange={(e) => setMaxHeading(parseInt(e.target.value))}
+							type="number"
+							min="0"
+							max="359"
+						/>
+						<label>Deg</label>
+					</div>
 				</BottomBarInputWrapper>
 			</BottomBarInputs>
+			<BottomBarMenuButtons>
+				<BottomBarMenuButton onClick={generateRouteFunc}>
+					Generate
+				</BottomBarMenuButton>
+			</BottomBarMenuButtons>
 		</BottomBarWrapper>
 	);
 };

@@ -1,5 +1,7 @@
 import { IonApp, IonContent, IonPage, setupIonicReact } from '@ionic/react';
 
+import { RecoilRoot } from 'recoil';
+
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
 
@@ -25,13 +27,15 @@ import Home from './pages/Home';
 setupIonicReact();
 
 const App: React.FC = () => (
-	<IonApp>
-		<IonPage>
-			<IonContent>
-				<Home />
-			</IonContent>
-		</IonPage>
-	</IonApp>
+		<IonApp>
+			<IonPage>
+				<IonContent>
+					<RecoilRoot>
+						<Home />
+					</RecoilRoot>
+				</IonContent>
+			</IonPage>
+		</IonApp>
 );
 
 export default App;

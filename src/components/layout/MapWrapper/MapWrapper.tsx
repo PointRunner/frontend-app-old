@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, LegacyRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, RefObject } from 'react';
 import { Geolocation, Position } from '@capacitor/geolocation';
 
 import Map from 'ol/Map';
@@ -7,9 +7,8 @@ import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import XYZ from 'ol/source/XYZ';
-import GeoJSON from 'ol/format/GeoJSON';
 import Polyline from 'ol/format/Polyline';
-import { transform } from 'ol/proj';
+import { fromLonLat } from 'ol/proj';
 import { Coordinate } from 'ol/coordinate';
 import { Geometry, Point } from 'ol/geom';
 import styled from 'styled-components';
@@ -19,11 +18,12 @@ import Feature from 'ol/Feature';
 import MapBrowserEvent from 'ol/MapBrowserEvent';
 import Stroke from 'ol/style/Stroke';
 
-
 import UserLocationIcon from '../../../assets/images/UI/userLocationIcon.png';
 import NextPointLocationIcon from '../../../assets/images/UI/nextPointIcon.png';
-import {CoordAndFeature, INearestResponse, IRouteGeometry, IRouteResponse} from './MapWrapper.d'
-
+import { CoordAndFeature, IRouteGeometry, IRouteItem } from '../../../utils/MapUtils.d';
+import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
+import { useRecoilState } from 'recoil';
+import { userLocationState } from '../../../utils/State';
 
 const MapWrapperDiv = styled.div`
 	position: absolute;
@@ -58,75 +58,14 @@ const routeStyle = new Style({
 	}),
 });
 
-
 const MapWrapper: React.FC = () => {
-	const [userLocation, setUserLocation] = useState<Coordinate>();
-
-	const mapElement: LegacyRef<HTMLDivElement> = useRef<HTMLDivElement>(null);
+	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
+	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
 	const featuresLayerSourceRef = useRef<VectorSource<Geometry>>();
 	const userLocationRef = useRef<CoordAndFeature | null>();
 	const nextPointLocationRef = useRef<CoordAndFeature | null>();
 	const routeFeatureRef = useRef<Feature | null>();
-
-	
-
-
-	const getNearestFromApi = (coords: Coordinate): Promise<Coordinate> => {
-		/*
-			Get the nearest point on a street network for a given coordinate.
-
-			@param coords - Initial coordinate
-
-			@returns Promise<Coordinate> - Nearest coordinate on a street.
-		*/
-		return new Promise((resolve, reject) => {
-			const longLat = transform(coords, 'EPSG:3857', 'EPSG:4326');
-			fetch(`http://router.project-osrm.org/nearest/v1/walking/${longLat.join()}`)
-				.then((resp: Response) => {
-					return resp.json();
-				})
-				.then((data: INearestResponse) => {
-					if (data.code !== 'Ok') reject();
-					else {
-						const transformedResponseCoords = transform(
-							data.waypoints![0].location!,
-							'EPSG:4326',
-							'EPSG:3857'
-						);
-						resolve(transformedResponseCoords);
-					}
-				})
-				.catch(() => reject());
-		});
-	};
-
-	const getRouteFromApi = (start: Coordinate, end: Coordinate): Promise<IRouteGeometry> => {
-		/*
-			Get an optimal route from the OSRM API.
-			@param start - Start EPSG:3857 coordinate.
-			@param end - End EPSG:3857 coordinate.
-
-			@returns Promise<IRouteGeometry> - Polyline-ready object with the correct route.
-		*/
-		const points = [
-			transform(start, 'EPSG:3857', 'EPSG:4326'),
-			transform(end, 'EPSG:3857', 'EPSG:4326'),
-		];
-		return new Promise((resolve, reject) => {
-			fetch(`http://router.project-osrm.org/route/v1/foot/${points.join(';')}`)
-				.then((resp: Response) => {
-					return resp.json();
-				})
-				.then((data: IRouteResponse) => {
-					if (data.code !== 'Ok') reject();
-					else {
-						resolve(data.routes![0].geometry);
-					}
-				})
-				.catch(() => reject());
-		});
-	};
 
 	const drawRoute = (foundRoute: IRouteGeometry) => {
 		/*
@@ -189,12 +128,9 @@ const MapWrapper: React.FC = () => {
 
 	Geolocation.watchPosition({ enableHighAccuracy: true }, (newLocation: Position | null) => {
 		if (newLocation) {
-			const transformedPosition = transform(
-				[newLocation.coords.longitude, newLocation.coords.latitude],
-				'EPSG:4326',
-				'EPSG:3857'
+			setUserLocation(
+				fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
 			);
-			setUserLocation(transformedPosition);
 		}
 	});
 
@@ -209,9 +145,9 @@ const MapWrapper: React.FC = () => {
 			getNearestFromApi(event.coordinate).then((nearestPoint: Coordinate) => {
 				updateLocationRef(nearestPoint, nextPointLocationRef, nextLocationMapPin);
 				getRouteFromApi(userLocationRef.current!.coordinates, nearestPoint).then(
-					(foundRoute: IRouteGeometry) => {
+					(foundRoute: IRouteItem) => {
 						clearPreviousRoute();
-						drawRoute(foundRoute);
+						drawRoute(foundRoute.geometry);
 					}
 				);
 			});
@@ -221,11 +157,7 @@ const MapWrapper: React.FC = () => {
 
 	useEffect(() => {
 		if (mapElement.current && !mapRef.current) {
-			const featureLayersSource = new VectorSource({
-				format: new GeoJSON({
-					dataProjection: 'EPSG:3857',
-				}),
-			});
+			const featureLayersSource = new VectorSource();
 			const initalFeaturesLayer = new VectorLayer({
 				source: featureLayersSource,
 			});
@@ -241,11 +173,9 @@ const MapWrapper: React.FC = () => {
 					initalFeaturesLayer,
 				],
 				view: new View({
-					projection: 'EPSG:3857',
 					center: [0, 0],
 					zoom: 18,
 				}),
-				controls: [],
 			});
 			mapRef.current.on('click', handleMapClick);
 			featuresLayerSourceRef.current = featureLayersSource;
