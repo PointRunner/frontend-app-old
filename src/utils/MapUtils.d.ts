@@ -31,10 +31,17 @@ export interface CoordAndFeature {
 	feature: Feature;
 }
 
+
 export interface IRouteGenerationParams {
 	minDistance: number;
 	maxDistance: number;
 	minHeading: number;
 	maxHeading: number;
 	showRoute: boolean;
+	
+}
+
+export interface IRandomGenerationResults {
+	point: CoordAndFeature,
+	route?: IRouteItem
 }

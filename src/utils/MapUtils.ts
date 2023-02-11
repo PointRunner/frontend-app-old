@@ -2,7 +2,7 @@ import { Coordinate } from 'ol/coordinate';
 import transformTranslate from '@turf/transform-translate';
 import { point } from '@turf/helpers';
 import { fromLonLat, toLonLat } from 'ol/proj';
-import { INearestResponse, IRouteResponse, IRouteItem, CoordAndFeature } from './MapUtils.d';
+import { INearestResponse, IRouteResponse, IRouteItem, IRandomGenerationResults } from './MapUtils.d';
 import { GeoJSONPoint } from 'ol/format/GeoJSON';
 import Feature from 'ol/Feature';
 import { Point } from 'ol/geom';
@@ -89,7 +89,7 @@ export const generatePointToRun = async (
 	maxDistance: number,
 	minHeading: number,
 	maxHeading: number
-): Promise<CoordAndFeature> => {
+): Promise<IRandomGenerationResults> => {
 	/*
         Handle user asking for a random point - generate points until a valid one is found.
 
@@ -108,8 +108,8 @@ export const generatePointToRun = async (
 	};
 	let isRouteFound = false;
 	let generatedPoint = undefined;
+	let generatedRoute;
 	do {
-		console.log('Generating a point');
 		generatedPoint = generateRandomPoint(
 			userLocationGeoJson,
 			minDistance,
@@ -117,12 +117,12 @@ export const generatePointToRun = async (
 			minHeading,
 			maxHeading
 		);
-		try {console.log(await getRouteFromApi(currentLocation, generatedPoint.geometry.coordinates)); isRouteFound = true;}
+		try {generatedRoute = await getRouteFromApi(currentLocation, generatedPoint.geometry.coordinates); isRouteFound = true;}
 		catch (err) {console.error(err)}
 	} while (!isRouteFound);
 	const mercatorCoords = fromLonLat(generatedPoint.geometry.coordinates);
 	const feature = new Feature({ geometry: new Point(mercatorCoords) });
-	return { feature: feature, coordinates: mercatorCoords };
+	return {route: generatedRoute, point: {feature: feature, coordinates: mercatorCoords }};
 };
 
 const randomFloat = (min: number, max: number): number => {

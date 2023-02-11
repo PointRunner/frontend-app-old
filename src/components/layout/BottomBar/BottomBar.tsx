@@ -17,17 +17,13 @@ import {
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
 	generateRouteFunction,
-	maxDistanceParam,
-	maxHeadingParam,
-	minDistanceParam,
-	minHeadingParam,
+	routeGenerationParams,
 } from '../../../utils/State';
+import { IRouteGenerationParams } from '../../../utils/MapUtils.d';
 
 const BottomBar = () => {
-	const [maxDistance, setMaxDistance] = useRecoilState(maxDistanceParam);
-	const [minDistance, setMinDistance] = useRecoilState(minDistanceParam);
-	const [maxHeading, setMaxHeading] = useRecoilState(maxHeadingParam);
-	const [minHeading, setMinHeading] = useRecoilState(minHeadingParam);
+
+	const [routeParams, setRouteParams] = useRecoilState<IRouteGenerationParams>(routeGenerationParams);
 	const generateRouteFunc = useRecoilValue(generateRouteFunction);
 
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
@@ -35,7 +31,7 @@ const BottomBar = () => {
 		useState<HTMLButtonElement | null>(null);
 
 	const toggleBottomBar = (forcedValue: boolean | undefined = undefined): void => {
-		/*
+		/** 
             Toggle the bottom bar expansion, or set it to a forced value.
             @param forcedValue - Value to use if need to override toggle.
         */
@@ -44,7 +40,7 @@ const BottomBar = () => {
 	};
 
 	const handleTopButtonClick = (buttonElementId: string, nextFuction: () => any): void => {
-		/*
+		/** 
             Handle any click on a top button (one of the two main ones). 
             @param buttonElementId - ID of the button element that was clicked.
             @param nextFunction - Next function to run (original onClick target function).
@@ -57,8 +53,22 @@ const BottomBar = () => {
 		nextFuction();
 	};
 
+	const updateRouteGenerationParams = (key: keyof IRouteGenerationParams, newValue: number | boolean) => {
+		/**
+		 * Update the recoil.js state regarding the route generation params.
+		 *
+		 * @param key - Name of the parameter to update
+		 * @param newValue - New value to set for that key.
+		 */
+
+		if (!newValue) return;
+		setRouteParams((prevState) => {
+			return {...prevState, [key]: newValue}
+		});
+	};
+
 	useEffect(() => {
-		/*
+		/** 
 			Change the action icons to either their original image or the back icon.
 		*/
 		const originalButtonIcons: { [key: string]: string } = {
@@ -105,8 +115,13 @@ const BottomBar = () => {
 					<label>Minimum Distance</label>
 					<div>
 						<BottomBarInput
-							value={minDistance}
-							onChange={(e) => setMinDistance(parseFloat(e.target.value))}
+							value={routeParams.minDistance}
+							onChange={(e) =>
+								updateRouteGenerationParams(
+									'minDistance',
+									parseFloat(e.target.value)
+								)
+							}
 							type="number"
 						/>
 						<label>KM</label>
@@ -116,8 +131,13 @@ const BottomBar = () => {
 					<label>Maximum Distance</label>
 					<div>
 						<BottomBarInput
-							value={maxDistance}
-							onChange={(e) => setMaxDistance(parseFloat(e.target.value))}
+							value={routeParams.maxDistance}
+							onChange={(e) =>
+								updateRouteGenerationParams(
+									'maxDistance',
+									parseFloat(e.target.value)
+								)
+							}
 							type="number"
 						/>
 						<label>KM</label>
@@ -127,8 +147,10 @@ const BottomBar = () => {
 					<label>Minimum Heading</label>
 					<div>
 						<BottomBarInput
-							value={minHeading}
-							onChange={(e) => setMinHeading(parseInt(e.target.value))}
+							value={routeParams.minHeading}
+							onChange={(e) =>
+								updateRouteGenerationParams('minHeading', parseInt(e.target.value))
+							}
 							type="number"
 							min="0"
 							max="359"
@@ -140,8 +162,10 @@ const BottomBar = () => {
 					<label>Maximum Heading</label>
 					<div>
 						<BottomBarInput
-							value={maxHeading}
-							onChange={(e) => setMaxHeading(parseInt(e.target.value))}
+							value={routeParams.maxHeading}
+							onChange={(e) =>
+								updateRouteGenerationParams('maxHeading', parseInt(e.target.value))
+							}
 							type="number"
 							min="0"
 							max="359"
@@ -151,9 +175,7 @@ const BottomBar = () => {
 				</BottomBarInputWrapper>
 			</BottomBarInputs>
 			<BottomBarMenuButtons>
-				<BottomBarMenuButton onClick={generateRouteFunc}>
-					Generate
-				</BottomBarMenuButton>
+				<BottomBarMenuButton onClick={generateRouteFunc}>Generate</BottomBarMenuButton>
 			</BottomBarMenuButtons>
 		</BottomBarWrapper>
 	);
