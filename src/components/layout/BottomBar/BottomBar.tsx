@@ -15,17 +15,15 @@ import {
 	BottomBarMenuButton,
 } from './Styles.BottomBar';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import {
-	generateRouteFunction,
-	routeGenerationParams,
-} from '../../../utils/State';
+import { generateRouteFunction, routeGenerationParams } from '../../../utils/State';
 import { IRouteGenerationParams } from '../../../utils/MapUtils.d';
 
 const BottomBar = () => {
-
-	const [routeParams, setRouteParams] = useRecoilState<IRouteGenerationParams>(routeGenerationParams);
+	const [routeParams, setRouteParams] =
+		useRecoilState<IRouteGenerationParams>(routeGenerationParams);
 	const generateRouteFunc = useRecoilValue(generateRouteFunction);
 
+	const [errorMessage, setErrorMessage] = useState<String>('');
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
 	const [currentlySelectedButton, setCurrentlySelectedButton] =
 		useState<HTMLButtonElement | null>(null);
@@ -53,7 +51,10 @@ const BottomBar = () => {
 		nextFuction();
 	};
 
-	const updateRouteGenerationParams = (key: keyof IRouteGenerationParams, newValue: number | boolean) => {
+	const updateRouteGenerationParams = (
+		key: keyof IRouteGenerationParams,
+		newValue: number | boolean
+	) => {
 		/**
 		 * Update the recoil.js state regarding the route generation params.
 		 *
@@ -61,10 +62,72 @@ const BottomBar = () => {
 		 * @param newValue - New value to set for that key.
 		 */
 
-		if (!newValue) return;
 		setRouteParams((prevState) => {
-			return {...prevState, [key]: newValue}
+			return { ...prevState, [key]: newValue };
 		});
+	};
+
+	const handleGenerateRoute = () => {
+		/**
+		 * Validate user input - if all good start route generation.
+		 */
+		cleanErrors();
+		if (validateInput()) generateRouteFunc();
+	};
+
+	const validateInput = (): boolean => {
+		/**
+		 * Validate input before generating a route.
+		 *
+		 * @returns boolean - result.
+		 */
+		let valid = true;
+		const inputFieldIds = {
+			'min-distance': document.getElementById('min-distance')! as HTMLInputElement,
+			'max-distance': document.getElementById('max-distance')! as HTMLInputElement,
+			'min-heading': document.getElementById('min-heading')! as HTMLInputElement,
+			'max-heading': document.getElementById('max-heading')! as HTMLInputElement,
+		};
+		for (const inputField of Object.values(inputFieldIds)) {
+			if (!inputField.value) {
+				valid = false;
+				showInputError(inputField);
+			}
+			if (!valid) return false;
+		}
+		if (inputFieldIds['max-distance'].value < inputFieldIds['min-distance'].value) {
+			valid = false;
+			showInputError(
+				inputFieldIds['max-distance'],
+				'Maximum distance must be higher than the minimum!'
+			);
+		}
+		if (inputFieldIds['max-heading'].value < inputFieldIds['min-heading'].value) {
+			valid = false;
+			showInputError(
+				inputFieldIds['max-heading'],
+				'Maximum heading must be higher than the minimum!'
+			);
+		}
+
+		return valid;
+	};
+
+	const cleanErrors = () => {
+		setErrorMessage('');
+		for (const elem of document.getElementsByClassName('error')) {
+			elem.classList.remove('error');
+		}
+	};
+
+	const showInputError = (elem: HTMLElement, message?: string) => {
+		/**
+		 * Display a UI error message when user input is wrong.
+		 *
+		 * @param elem - ID of the element to show an error for.
+		 * @param message - Optional message to show under the inputs.
+		 */
+		if (message) setErrorMessage(message);
 	};
 
 	useEffect(() => {
@@ -123,6 +186,7 @@ const BottomBar = () => {
 								)
 							}
 							type="number"
+							id="min-distance"
 						/>
 						<label>KM</label>
 					</div>
@@ -139,6 +203,7 @@ const BottomBar = () => {
 								)
 							}
 							type="number"
+							id="max-distance"
 						/>
 						<label>KM</label>
 					</div>
@@ -152,8 +217,8 @@ const BottomBar = () => {
 								updateRouteGenerationParams('minHeading', parseInt(e.target.value))
 							}
 							type="number"
-							min="0"
 							max="359"
+							id="min-heading"
 						/>
 						<label>Deg</label>
 					</div>
@@ -167,15 +232,15 @@ const BottomBar = () => {
 								updateRouteGenerationParams('maxHeading', parseInt(e.target.value))
 							}
 							type="number"
-							min="0"
 							max="359"
+							id="max-heading"
 						/>
 						<label>Deg</label>
 					</div>
 				</BottomBarInputWrapper>
 			</BottomBarInputs>
 			<BottomBarMenuButtons>
-				<BottomBarMenuButton onClick={generateRouteFunc}>Generate</BottomBarMenuButton>
+				<BottomBarMenuButton onClick={handleGenerateRoute}>Generate</BottomBarMenuButton>
 			</BottomBarMenuButtons>
 		</BottomBarWrapper>
 	);

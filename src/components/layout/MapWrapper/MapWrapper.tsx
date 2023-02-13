@@ -20,10 +20,18 @@ import Stroke from 'ol/style/Stroke';
 
 import UserLocationIcon from '../../../assets/images/UI/userLocationIcon.png';
 import NextPointLocationIcon from '../../../assets/images/UI/nextPointIcon.png';
-import { CoordAndFeature, IRouteGeometry, IRouteItem } from '../../../utils/MapUtils.d';
+import {
+	CoordAndFeature,
+	IRandomGenerationResults,
+	IRouteGeometry,
+	IRouteItem,
+} from '../../../utils/MapUtils.d';
 import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
-import { useRecoilState } from 'recoil';
-import { userLocationState } from '../../../utils/State';
+import { useRecoilState, useRecoilValue } from 'recoil';
+import {
+	generatedPointAndRoute as generatedRouteState,
+	userLocationState,
+} from '../../../utils/State';
 
 const MapWrapperDiv = styled.div`
 	position: absolute;
@@ -60,6 +68,9 @@ const routeStyle = new Style({
 
 const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
+	const generatedPointAndRoute =
+		useRecoilValue<IRandomGenerationResults | undefined>(generatedRouteState);
+
 	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
 	const featuresLayerSourceRef = useRef<VectorSource<Geometry>>();
@@ -117,6 +128,24 @@ const MapWrapper: React.FC = () => {
 		},
 		[featuresLayerSourceRef]
 	);
+
+	useEffect(() => {
+		const displayGeneratedRouteAndPoint = () => {
+			/**
+			 * Update the map to show the randomly-generated route and point from state.
+			 */
+			if (generatedPointAndRoute) {
+				clearPreviousRoute();
+				drawRoute(generatedPointAndRoute.route!.geometry);
+				updateLocationRef(
+					generatedPointAndRoute.point.coordinates,
+					nextPointLocationRef,
+					nextLocationMapPin
+				);
+			}
+		};
+		displayGeneratedRouteAndPoint();
+	}, [generatedPointAndRoute, updateLocationRef]);
 
 	useEffect(() => {
 		/*

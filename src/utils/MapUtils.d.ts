@@ -33,11 +33,11 @@ export interface CoordAndFeature {
 
 
 export interface IRouteGenerationParams {
-	minDistance: number;
-	maxDistance: number;
-	minHeading: number;
-	maxHeading: number;
-	showRoute: boolean;
+	minDistance?: number;
+	maxDistance?: number;
+	minHeading?: number;
+	maxHeading?: number;
+	showRoute?: boolean;
 	
 }
 

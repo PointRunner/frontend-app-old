@@ -2,7 +2,12 @@ import { Coordinate } from 'ol/coordinate';
 import transformTranslate from '@turf/transform-translate';
 import { point } from '@turf/helpers';
 import { fromLonLat, toLonLat } from 'ol/proj';
-import { INearestResponse, IRouteResponse, IRouteItem, IRandomGenerationResults } from './MapUtils.d';
+import {
+	INearestResponse,
+	IRouteResponse,
+	IRouteItem,
+	IRandomGenerationResults,
+} from './MapUtils.d';
 import { GeoJSONPoint } from 'ol/format/GeoJSON';
 import Feature from 'ol/Feature';
 import { Point } from 'ol/geom';
@@ -19,11 +24,9 @@ export const getRouteFromApi = (start: Coordinate, end: Coordinate): Promise<IRo
 		const points = [toLonLat(start), toLonLat(end)];
 		fetch(`http://router.project-osrm.org/route/v1/foot/${points.join(';')}`)
 			.then((resp: Response) => {
-				console.log(resp);
 				return resp.json();
 			})
 			.then((data: IRouteResponse) => {
-				console.log(data);
 				if (data.code !== 'Ok') reject(data.code);
 				else {
 					resolve(data.routes![0]);
@@ -37,9 +40,9 @@ export const getNearestFromApi = (coords: Coordinate): Promise<Coordinate> => {
 	/*
         Get the nearest point on a street network for a given coordinate.
 
-        @param coords - Initial coordinate
+        @param coords - Initial coordinate EPSG:3857
 
-        @returns Promise<Coordinate> - Nearest coordinate on a street.
+        @returns Promise<Coordinate> - Nearest coordinate on a street EPSG:3857
     */
 	return new Promise((resolve, reject) => {
 		const longLat = toLonLat(coords);
@@ -107,22 +110,30 @@ export const generatePointToRun = async (
 		coordinates: toLonLat(currentLocation),
 	};
 	let isRouteFound = false;
-	let generatedPoint = undefined;
+	let foundPoint = undefined;
 	let generatedRoute;
 	do {
-		generatedPoint = generateRandomPoint(
+		const rawGeneratedPoint = generateRandomPoint(
 			userLocationGeoJson,
 			minDistance,
 			maxDistance,
 			minHeading,
 			maxHeading
 		);
-		try {generatedRoute = await getRouteFromApi(currentLocation, generatedPoint.geometry.coordinates); isRouteFound = true;}
-		catch (err) {console.error(err)}
+		try {
+			foundPoint = await getNearestFromApi(
+				fromLonLat(rawGeneratedPoint.geometry.coordinates)
+			);
+			generatedRoute = await getRouteFromApi(currentLocation, foundPoint);
+			console.log(generatedRoute.distance)
+			if (generatedRoute.distance <= maxDistance * 1000 && generatedRoute.distance >= minDistance * 1000)
+				isRouteFound = true;
+		} catch (err) {
+			console.error(err);
+		}
 	} while (!isRouteFound);
-	const mercatorCoords = fromLonLat(generatedPoint.geometry.coordinates);
-	const feature = new Feature({ geometry: new Point(mercatorCoords) });
-	return {route: generatedRoute, point: {feature: feature, coordinates: mercatorCoords }};
+	const feature = new Feature({ geometry: new Point(foundPoint!) });
+	return { route: generatedRoute, point: { feature: feature, coordinates: foundPoint } };
 };
 
 const randomFloat = (min: number, max: number): number => {

@@ -1,12 +1,6 @@
 import { Coordinate } from 'ol/coordinate';
 import { atom, RecoilState } from 'recoil';
-import { IRouteGenerationParams } from './MapUtils.d';
-
-export const maxDistanceParam: RecoilState<number> = atom({ key: 'maxDistanceParam', default: 5 });
-export const minDistanceParam: RecoilState<number> = atom({ key: 'minDistanceParam', default: 1 });
-export const maxHeadingParam: RecoilState<number> = atom({ key: 'maxHeadingParam', default: 359 });
-export const minHeadingParam: RecoilState<number> = atom({ key: 'minHeadingParam', default: 0 });
-export const showRouteParam: RecoilState<boolean> = atom({ key: 'showRouteParam', default: false });
+import { IRandomGenerationResults, IRouteGenerationParams } from './MapUtils.d';
 
 const defaultRouteGenerationParams = {
 	minDistance: 1,
@@ -16,7 +10,7 @@ const defaultRouteGenerationParams = {
 	showRoute: true,
 };
 
-export const routeGenerationParams: RecoilState<IRouteGenerationParams> = atom({
+export const routeGenerationParams = atom<IRouteGenerationParams>({
 	key: 'routeGenerationParams',
 	default: defaultRouteGenerationParams,
 });
@@ -30,4 +24,9 @@ export const generateRouteFunction: RecoilState<() => void> = atom({
 	default: () => {
 		console.error('no generation function defined!');
 	},
+});
+
+export const generatedPointAndRoute = atom<IRandomGenerationResults | undefined>({
+	key: 'generatedPointAndRoute',
+	default: undefined,
 });
