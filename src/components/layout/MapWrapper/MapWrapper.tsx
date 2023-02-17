@@ -30,6 +30,7 @@ import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
 	generatedPointAndRoute as generatedRouteState,
+	layoutDisplayMode,
 	userLocationState,
 } from '../../../utils/State';
 
@@ -70,7 +71,7 @@ const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
 	const generatedPointAndRoute =
 		useRecoilValue<IRandomGenerationResults | undefined>(generatedRouteState);
-
+	const layoutDisplayModeState = useRecoilValue(layoutDisplayMode);
 	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
 	const featuresLayerSourceRef = useRef<VectorSource<Geometry>>();
@@ -155,7 +156,7 @@ const MapWrapper: React.FC = () => {
 		updateLocationRef(userLocation, userLocationRef, userMapPin);
 	}, [featuresLayerSourceRef, updateLocationRef, userLocation]);
 
-	Geolocation.watchPosition({ enableHighAccuracy: true }, (newLocation: Position | null) => {
+	Geolocation.watchPosition({ enableHighAccuracy: false}, (newLocation: Position | null) => {
 		if (newLocation) {
 			setUserLocation(
 				fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
@@ -206,10 +207,21 @@ const MapWrapper: React.FC = () => {
 					zoom: 18,
 				}),
 			});
-			mapRef.current.on('click', handleMapClick);
 			featuresLayerSourceRef.current = featureLayersSource;
 		}
-	}, [handleMapClick]);
+	}, []);
+
+	useEffect(() => {
+		const setMapOnClick = () => {
+			/**
+			 * Set the ability of the user to pick a point on the map, according to the state of the layout.
+			 */
+			if (layoutDisplayModeState === 'select') {
+				mapRef.current?.on('click', handleMapClick);
+			} else mapRef.current?.un('click', handleMapClick);
+		};
+		setMapOnClick();
+	}, [handleMapClick, layoutDisplayModeState]);
 
 	return (
 		<>

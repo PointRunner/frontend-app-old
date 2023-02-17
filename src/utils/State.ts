@@ -1,6 +1,7 @@
 import { Coordinate } from 'ol/coordinate';
 import { atom, RecoilState } from 'recoil';
 import { IRandomGenerationResults, IRouteGenerationParams } from './MapUtils.d';
+import { displayMode } from '../components/layout/LayoutController/LayoutController.d';
 
 const defaultRouteGenerationParams = {
 	minDistance: 1,
@@ -29,4 +30,9 @@ export const generateRouteFunction: RecoilState<() => void> = atom({
 export const generatedPointAndRoute = atom<IRandomGenerationResults | undefined>({
 	key: 'generatedPointAndRoute',
 	default: undefined,
+});
+
+export const layoutDisplayMode = atom<displayMode>({
+	key: 'layoutDisplayMode',
+	default: 'default',
 });

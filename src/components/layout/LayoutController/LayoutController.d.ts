@@ -1,0 +1,1 @@
+export type displayMode = 'default' | 'random' | 'select';
