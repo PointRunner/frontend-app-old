@@ -1,6 +1,7 @@
 import { Coordinate } from 'ol/coordinate';
 import transformTranslate from '@turf/transform-translate';
 import { point } from '@turf/helpers';
+import midpoint from '@turf/midpoint'
 import { fromLonLat, toLonLat } from 'ol/proj';
 import {
 	INearestResponse,
@@ -136,14 +137,28 @@ export const generatePointToRun = async (
 	return { route: generatedRoute, point: { feature: feature, coordinates: foundPoint } };
 };
 
+export const getMidpoint = (start: Coordinate, end: Coordinate): Coordinate => {
+	/**
+	 * Get the midpoint between two points on a map.
+	 * 
+	 * @param start - 1st point
+	 * @param end   - 2nd point
+	 * 
+	 * @returns Coordinate - The found midpoint
+	 */
+	const [startLonLat, endLonLat] = [point(toLonLat(start)), point(toLonLat(end))];
+	const midpointLonLat = midpoint(startLonLat, endLonLat);
+	return fromLonLat(midpointLonLat.geometry.coordinates);
+}	
+
 const randomFloat = (min: number, max: number): number => {
-	/*
-    Generate a random float number between two boundaries.
-
-    @param min
-    @param max
-    @returns a random number.
-
+	/** 
+    * Generate a random float number between two boundaries.
+	*
+    * @param min
+    * @param max
+    * @returns a random number.
+	*
     */
 	return Math.random() * (max - min) + min;
 };

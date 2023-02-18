@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useRecoilValue, useRecoilState } from 'recoil';
+import { useRecoilValue, useRecoilState, useSetRecoilState } from 'recoil';
 import { IRouteGenerationParams } from '../../../../utils/MapUtils.d';
-import { generateRouteFunction, routeGenerationParams } from '../../../../utils/State';
+import { generateRouteFunction, layoutDisplayMode, routeGenerationParams } from '../../../../utils/State';
 import {
 	BottomBarInput,
 	BottomBarInputs,
@@ -14,6 +14,7 @@ import {
 const RandomPoint = () => {
     
 	const generateRouteFunc = useRecoilValue(generateRouteFunction);
+	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayMode);
 	const [errorMessage, setErrorMessage] = useState<String>('');
 	const [routeParams, setRouteParams] =
 		useRecoilState<IRouteGenerationParams>(routeGenerationParams);
@@ -39,7 +40,10 @@ const RandomPoint = () => {
 		 * Validate user input - if all good start route generation.
 		 */
 		cleanErrors();
-		if (validateInput()) generateRouteFunc();
+		if (validateInput()) {
+			setLayoutDisplayMode('default')
+			generateRouteFunc();
+		} 
 	};
 
 	const validateInput = (): boolean => {

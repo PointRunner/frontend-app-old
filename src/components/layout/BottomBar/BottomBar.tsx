@@ -2,14 +2,14 @@ import RandomIconUrl from '../../../assets/images/UI/random.png';
 import PinpointIconUrl from '../../../assets/images/UI/map-pin.png';
 import BackIconUrl from '../../../assets/images/UI/back.png';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
 	BottomBarButton,
 	BottomBarButtonWrapper,
 	BottomBarFirstRow,
 	BottomBarWrapper,
 } from './Styles.BottomBar';
-import { useSetRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { layoutDisplayMode } from '../../../utils/State';
 import RandomPoint from './RandomPoint/RandomPoint';
 import SelectPoint from './SelectPoint/SelectPoint';
@@ -20,19 +20,10 @@ interface IBottomBarProps {
 }
 
 const BottomBar = (props: IBottomBarProps) => {
-	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayMode);
+	const [layoutDisplayModeState, setLayoutDisplayMode] = useRecoilState(layoutDisplayMode);
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
 	const [currentlySelectedButton, setCurrentlySelectedButton] =
 		useState<HTMLButtonElement | null>(null);
-
-	const toggleBottomBar = (forcedValue: boolean | undefined = undefined): void => {
-		/** 
-            Toggle the bottom bar expansion, or set it to a forced value.
-            @param forcedValue - Value to use if need to override toggle.
-        */
-		if (forcedValue) setIsExpanded(forcedValue);
-		else setIsExpanded(!isExpanded);
-	};
 
 	const handleTopButtonClick = (buttonElementId: string): void => {
 		/** 
@@ -48,20 +39,30 @@ const BottomBar = (props: IBottomBarProps) => {
 		if (currentlySelectedButton === document.getElementById(buttonElementId)) {
 			setCurrentlySelectedButton(null);
 			setLayoutDisplayMode('default');
-			toggleBottomBar(false);
 		} else {
 			setCurrentlySelectedButton(
 				document.getElementById(buttonElementId)! as HTMLButtonElement
 			);
 			setLayoutDisplayMode(displayStates[buttonElementId]);
-			toggleBottomBar(true);
 		}
 	};
 
 	useEffect(() => {
-		/** 
-			Change the action icons to either their original image or the back icon.
-		*/
+		const resetBottomBar = () => {
+			/**
+			 * Set the bottom bar according to the layout.
+			 */
+			setIsExpanded(!(layoutDisplayModeState === 'default'));
+			if (layoutDisplayModeState === 'default') {
+				resetButtonImages();
+				setCurrentlySelectedButton(null);
+			}
+		};
+		resetBottomBar();
+	}, [layoutDisplayModeState]);
+
+
+	const resetButtonImages = () => {
 		const originalButtonIcons: { [key: string]: string } = {
 			'select-point': PinpointIconUrl,
 			'random-point': RandomIconUrl,
@@ -71,6 +72,13 @@ const BottomBar = (props: IBottomBarProps) => {
 				.children[0] as unknown as HTMLImageElement;
 			buttonImageElement.src = originalButtonIcons[originalButtonId];
 		}
+	}
+
+	useEffect(() => {
+		/** 
+			Change the action icons to either their original image or the back icon.
+		*/
+		resetButtonImages();
 		if (currentlySelectedButton) {
 			(currentlySelectedButton.children[0] as unknown as HTMLImageElement).src = BackIconUrl;
 		}

@@ -15,6 +15,7 @@
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^12.6.3",
     "@turf/helpers": "^6.5.0",
+    "@turf/midpoint": "^6.5.0",
     "@turf/transform-translate": "^6.5.0",
     "@types/node": "^12.19.15",
     "@types/react": "^18.0.17",

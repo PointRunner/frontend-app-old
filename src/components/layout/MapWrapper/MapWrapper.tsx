@@ -10,7 +10,7 @@ import XYZ from 'ol/source/XYZ';
 import Polyline from 'ol/format/Polyline';
 import { fromLonLat } from 'ol/proj';
 import { Coordinate } from 'ol/coordinate';
-import { Geometry, Point } from 'ol/geom';
+import { Geometry, LineString, Point } from 'ol/geom';
 import styled from 'styled-components';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
@@ -26,7 +26,7 @@ import {
 	IRouteGeometry,
 	IRouteItem,
 } from '../../../utils/MapUtils.d';
-import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
+import { getMidpoint, getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
 	generatedPointAndRoute as generatedRouteState,
@@ -143,9 +143,16 @@ const MapWrapper: React.FC = () => {
 					nextPointLocationRef,
 					nextLocationMapPin
 				);
+				mapRef.current
+					?.getView()
+					.fit(new LineString([userLocation, generatedPointAndRoute.point.coordinates]), {
+						padding: [50, 50, 50, 50],
+						duration: 500,
+					});
 			}
 		};
 		displayGeneratedRouteAndPoint();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [generatedPointAndRoute, updateLocationRef]);
 
 	useEffect(() => {
@@ -156,7 +163,7 @@ const MapWrapper: React.FC = () => {
 		updateLocationRef(userLocation, userLocationRef, userMapPin);
 	}, [featuresLayerSourceRef, updateLocationRef, userLocation]);
 
-	Geolocation.watchPosition({ enableHighAccuracy: false}, (newLocation: Position | null) => {
+	Geolocation.watchPosition({ enableHighAccuracy: false }, (newLocation: Position | null) => {
 		if (newLocation) {
 			setUserLocation(
 				fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
