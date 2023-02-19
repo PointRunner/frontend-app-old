@@ -10,7 +10,7 @@ import XYZ from 'ol/source/XYZ';
 import Polyline from 'ol/format/Polyline';
 import { fromLonLat } from 'ol/proj';
 import { Coordinate } from 'ol/coordinate';
-import { Geometry, LineString, Point } from 'ol/geom';
+import { Geometry, LineString, MultiPoint, Point } from 'ol/geom';
 import styled from 'styled-components';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
@@ -26,9 +26,10 @@ import {
 	IRouteGeometry,
 	IRouteItem,
 } from '../../../utils/MapUtils.d';
-import { getMidpoint, getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
-import { useRecoilState, useRecoilValue } from 'recoil';
+import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
+	centerViewFunction,
 	generatedPointAndRoute as generatedRouteState,
 	layoutDisplayMode,
 	userLocationState,
@@ -71,7 +72,8 @@ const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
 	const generatedPointAndRoute =
 		useRecoilValue<IRandomGenerationResults | undefined>(generatedRouteState);
-	const layoutDisplayModeState = useRecoilValue(layoutDisplayMode);
+	const setCenterViewFunction = useSetRecoilState(centerViewFunction);
+	const [layoutDisplayModeState, setLayoutDisplayMode] = useRecoilState(layoutDisplayMode);
 	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
 	const featuresLayerSourceRef = useRef<VectorSource<Geometry>>();
@@ -130,6 +132,22 @@ const MapWrapper: React.FC = () => {
 		[featuresLayerSourceRef]
 	);
 
+	const fitMapViewToPoints = (point1: Coordinate, point2: Coordinate) => {
+		/**
+		 * Fit the view to the two points (randomly generated or selected).
+		 *
+		 * @param point1 - First point
+		 * @param point2 - Second point
+		 */
+		console.log(new MultiPoint([point1, point2]))
+		console.log(mapRef.current?.getSize())
+		mapRef.current?.getView().fit(new MultiPoint([point1, point2]), {
+			size: mapRef.current?.getSize() || [window.outerWidth, window.outerHeight],
+			padding: [200, 40, 200, 40],
+			duration: 500
+		});
+	};
+
 	useEffect(() => {
 		const displayGeneratedRouteAndPoint = () => {
 			/**
@@ -143,12 +161,7 @@ const MapWrapper: React.FC = () => {
 					nextPointLocationRef,
 					nextLocationMapPin
 				);
-				mapRef.current
-					?.getView()
-					.fit(new LineString([userLocation, generatedPointAndRoute.point.coordinates]), {
-						padding: [50, 50, 50, 50],
-						duration: 500,
-					});
+				fitMapViewToPoints(userLocation, generatedPointAndRoute.point.coordinates);
 			}
 		};
 		displayGeneratedRouteAndPoint();
@@ -165,9 +178,9 @@ const MapWrapper: React.FC = () => {
 
 	Geolocation.watchPosition({ enableHighAccuracy: false }, (newLocation: Position | null) => {
 		if (newLocation) {
-			setUserLocation(
+			setTimeout(() => setUserLocation(
 				fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
-			);
+			), 1000);
 		}
 	});
 
@@ -185,12 +198,27 @@ const MapWrapper: React.FC = () => {
 					(foundRoute: IRouteItem) => {
 						clearPreviousRoute();
 						drawRoute(foundRoute.geometry);
+						fitMapViewToPoints(
+							userLocationRef.current?.coordinates,
+							nextPointLocationRef.current?.coordinates
+						);
+						setLayoutDisplayMode('default');
 					}
 				);
 			});
 		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[updateLocationRef]
 	);
+
+	const centerViewOnCurrentLocation = useCallback(() => {
+		/**
+		 * Set the view to center on the user location.
+		 */
+		mapRef.current?.getView().fit(new Point(userLocation), {
+			duration: 500,
+		});
+	}, [userLocation]);
 
 	useEffect(() => {
 		if (mapElement.current && !mapRef.current) {
@@ -215,8 +243,9 @@ const MapWrapper: React.FC = () => {
 				}),
 			});
 			featuresLayerSourceRef.current = featureLayersSource;
+			setCenterViewFunction(() => centerViewOnCurrentLocation());
 		}
-	}, []);
+	}, [centerViewOnCurrentLocation, setCenterViewFunction]);
 
 	useEffect(() => {
 		const setMapOnClick = () => {

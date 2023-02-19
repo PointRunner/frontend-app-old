@@ -2,6 +2,8 @@ import { IonFabButton, IonIcon, IonRow } from "@ionic/react";
 import { locateOutline } from "ionicons/icons";
 import variables from "../../../variables";
 import styled from "styled-components";
+import { useRecoilValue } from "recoil";
+import { centerViewFunction as centerViewFunctionState} from "../../../utils/State";
 
 const CustomFab = styled(IonFabButton)`
 	
@@ -16,9 +18,10 @@ const CustomFab = styled(IonFabButton)`
 
 
 const MapControls = () => {
+	const centerViewFunction = useRecoilValue(centerViewFunctionState);
     return (
         <IonRow>
-			<CustomFab style={{margin: "5% 0 0 2%"}}>
+			<CustomFab style={{margin: "5% 0 0 2%"}} onClick={() => console.log(centerViewFunction)}>
 				<IonIcon icon={locateOutline}  />
 			</CustomFab>
 		</IonRow>

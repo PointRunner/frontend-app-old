@@ -36,3 +36,11 @@ export const layoutDisplayMode = atom<displayMode>({
 	key: 'layoutDisplayMode',
 	default: 'default',
 });
+
+
+export const centerViewFunction: RecoilState<() => void> = atom({
+	key: 'centerViewFunction',
+	default: () => {
+		console.error('no center function defined!');
+	},
+});
