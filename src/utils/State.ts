@@ -1,7 +1,8 @@
 import { Coordinate } from 'ol/coordinate';
 import { atom, RecoilState } from 'recoil';
-import { IRandomGenerationResults, IRouteGenerationParams } from './MapUtils.d';
+import { IPointAndRoute, IRouteGenerationParams } from './MapUtils.d';
 import { displayMode } from '../components/layout/LayoutController/LayoutController.d';
+import { IRunningStats } from './interfaces/interfaces';
 
 const defaultRouteGenerationParams = {
 	minDistance: 1,
@@ -20,6 +21,14 @@ export const userLocationState: RecoilState<Coordinate> = atom({
 	key: 'userLocationState',
 	default: [0, 0],
 });
+
+
+export const RunningStatsState = atom<IRunningStats | {isRunning: boolean}>({
+	key: 'runningStatsState',
+	default: {isRunning: false}
+})
+
+
 export const generateRouteFunction: RecoilState<() => void> = atom({
 	key: 'generateRouteFunction',
 	default: () => {
@@ -27,8 +36,8 @@ export const generateRouteFunction: RecoilState<() => void> = atom({
 	},
 });
 
-export const generatedPointAndRoute = atom<IRandomGenerationResults | undefined>({
-	key: 'generatedPointAndRoute',
+export const nextPointAndRouteState = atom<IPointAndRoute | undefined>({
+	key: 'nextPointAndRoute',
 	default: undefined,
 });
 

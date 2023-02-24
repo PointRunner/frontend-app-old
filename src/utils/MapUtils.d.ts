@@ -41,7 +41,7 @@ export interface IRouteGenerationParams {
 	
 }
 
-export interface IRandomGenerationResults {
-	point: CoordAndFeature,
+export interface IPointAndRoute {
+	point: Coordinate,
 	route?: IRouteItem
 }

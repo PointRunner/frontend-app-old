@@ -7,11 +7,9 @@ import {
 	INearestResponse,
 	IRouteResponse,
 	IRouteItem,
-	IRandomGenerationResults,
+	IPointAndRoute,
 } from './MapUtils.d';
 import { GeoJSONPoint } from 'ol/format/GeoJSON';
-import Feature from 'ol/Feature';
-import { Point } from 'ol/geom';
 
 export const getRouteFromApi = (start: Coordinate, end: Coordinate): Promise<IRouteItem> => {
 	/*
@@ -93,7 +91,7 @@ export const generatePointToRun = async (
 	maxDistance: number,
 	minHeading: number,
 	maxHeading: number
-): Promise<IRandomGenerationResults> => {
+): Promise<IPointAndRoute> => {
 	/*
         Handle user asking for a random point - generate points until a valid one is found.
 
@@ -133,8 +131,7 @@ export const generatePointToRun = async (
 			console.error(err);
 		}
 	} while (!isRouteFound);
-	const feature = new Feature({ geometry: new Point(foundPoint!) });
-	return { route: generatedRoute, point: { feature: feature, coordinates: foundPoint } };
+	return { route: generatedRoute, point: foundPoint };
 };
 
 export const getMidpoint = (start: Coordinate, end: Coordinate): Coordinate => {
@@ -149,7 +146,20 @@ export const getMidpoint = (start: Coordinate, end: Coordinate): Coordinate => {
 	const [startLonLat, endLonLat] = [point(toLonLat(start)), point(toLonLat(end))];
 	const midpointLonLat = midpoint(startLonLat, endLonLat);
 	return fromLonLat(midpointLonLat.geometry.coordinates);
-}	
+}
+
+export const getRouteDistance = async (point1: Coordinate, point2: Coordinate): Promise<number> => {
+	/**
+	 * Get the road distance (not line) between two points.
+	 * 
+	 * @param point1 - 1st point EPSG:3857
+	 * @param point2 - 2nd point EPSG:3857
+	 * 
+	 * @returns number - Distance in meters
+	 */
+	const route = await getRouteFromApi(point1, point2);
+	return route.distance;
+}
 
 const randomFloat = (min: number, max: number): number => {
 	/** 

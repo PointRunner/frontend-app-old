@@ -1,18 +1,18 @@
 import React, { useCallback, useEffect } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { IRandomGenerationResults } from '../../utils/MapUtils.d';
+import { IPointAndRoute } from '../../utils/MapUtils.d';
 import { generatePointToRun } from '../../utils/MapUtils';
 import {
 	generateRouteFunction,
 	userLocationState,
 	routeGenerationParams,
-	generatedPointAndRoute,
+	nextPointAndRouteState,
 } from '../../utils/State';
 
 const MapController = (props: { children: JSX.Element | JSX.Element[] }) => {
 	const routeGenerationParmas = useRecoilValue(routeGenerationParams);
 	const userLocation = useRecoilValue(userLocationState);
-	const setGeneratedRoute = useSetRecoilState(generatedPointAndRoute);
+	const setNextPointAndRoute = useSetRecoilState(nextPointAndRouteState);
 
 	const generateRandomRoute = useCallback(async () => {
 		console.log('Generating random route!');
@@ -20,21 +20,21 @@ const MapController = (props: { children: JSX.Element | JSX.Element[] }) => {
 		Generate a random route when user clicks - uses RecoilState variables.
 		*/
 		if (userLocation) {
-			const results: IRandomGenerationResults = await generatePointToRun(
+			const results: IPointAndRoute = await generatePointToRun(
 				userLocation,
 				routeGenerationParmas.minDistance!,
 				routeGenerationParmas.maxDistance!,
 				routeGenerationParmas.minHeading!,
 				routeGenerationParmas.maxHeading!
 			);
-			setGeneratedRoute(results);
+			setNextPointAndRoute(results);
 		}
 	}, [
 		routeGenerationParmas.maxDistance,
 		routeGenerationParmas.maxHeading,
 		routeGenerationParmas.minDistance,
 		routeGenerationParmas.minHeading,
-		setGeneratedRoute,
+		setNextPointAndRoute,
 		userLocation,
 	]);
 	const setGenerateRouteFunc = useSetRecoilState(generateRouteFunction);

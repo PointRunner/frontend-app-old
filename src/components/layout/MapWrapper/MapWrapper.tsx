@@ -22,15 +22,15 @@ import UserLocationIcon from '../../../assets/images/UI/userLocationIcon.png';
 import NextPointLocationIcon from '../../../assets/images/UI/nextPointIcon.png';
 import {
 	CoordAndFeature,
-	IRandomGenerationResults,
+	IPointAndRoute,
 	IRouteGeometry,
 	IRouteItem,
 } from '../../../utils/MapUtils.d';
 import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRecoilState, useSetRecoilState } from 'recoil';
 import {
 	centerViewFunction,
-	generatedPointAndRoute as generatedRouteState,
+	nextPointAndRouteState,
 	layoutDisplayMode,
 	userLocationState,
 } from '../../../utils/State';
@@ -70,8 +70,8 @@ const routeStyle = new Style({
 
 const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
-	const generatedPointAndRoute =
-		useRecoilValue<IRandomGenerationResults | undefined>(generatedRouteState);
+	const [nextPointAndRoute, setNextPointAndRoute] =
+		useRecoilState<IPointAndRoute | undefined>(nextPointAndRouteState);
 	const [layoutDisplayModeState, setLayoutDisplayMode] = useRecoilState(layoutDisplayMode);
 	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
@@ -79,6 +79,18 @@ const MapWrapper: React.FC = () => {
 	const userLocationRef = useRef<CoordAndFeature | null>();
 	const nextPointLocationRef = useRef<CoordAndFeature | null>();
 	const routeFeatureRef = useRef<Feature | null>();
+
+	Geolocation.watchPosition({ enableHighAccuracy: false }, (newLocation: Position | null) => {
+		if (newLocation) {
+			const newLocationCoords = fromLonLat([
+				newLocation.coords.longitude,
+				newLocation.coords.latitude,
+			]);
+			if (newLocationCoords !== userLocation) {
+				setUserLocation(newLocationCoords);
+			}
+		}
+	});
 
 	const drawRoute = (foundRoute: IRouteGeometry) => {
 		/*
@@ -145,45 +157,37 @@ const MapWrapper: React.FC = () => {
 		});
 	};
 
-	useEffect(() => {
-		const displayGeneratedRouteAndPoint = () => {
-			/**
-			 * Update the map to show the randomly-generated route and point from state.
-			 */
-			if (generatedPointAndRoute) {
+	const handleNewPoint = useCallback(
+		(newPoint: Coordinate, route: IRouteItem) => {
+			const displayNewRouteAndPoint = () => {
+				/**
+				 * Update the map to show the randomly-generated route and point from state.
+				 */
 				clearPreviousRoute();
-				drawRoute(generatedPointAndRoute.route!.geometry);
-				updateLocationRef(
-					generatedPointAndRoute.point.coordinates,
-					nextPointLocationRef,
-					nextLocationMapPin
-				);
-				fitMapViewToPoints(userLocation, generatedPointAndRoute.point.coordinates);
-			}
-		};
-		displayGeneratedRouteAndPoint();
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [generatedPointAndRoute, updateLocationRef]);
+				drawRoute(route.geometry);
+				fitMapViewToPoints(userLocation, newPoint);
+			};
+
+			updateLocationRef(newPoint, nextPointLocationRef, nextLocationMapPin);
+			displayNewRouteAndPoint();
+			
+		},
+		[updateLocationRef, userLocation]
+	);
+
+	useEffect(() => {
+		if (nextPointAndRoute?.point && nextPointAndRoute.route) {
+			handleNewPoint(nextPointAndRoute.point, nextPointAndRoute.route);
+		}
+	}, [handleNewPoint, nextPointAndRoute, updateLocationRef]);
 
 	useEffect(() => {
 		/*
 			Re-center the map according to the location of the user when it first loads.
 		*/
-		updateLocationRef(userLocation, userLocationRef, userMapPin);	
+		updateLocationRef(userLocation, userLocationRef, userMapPin);
 		mapRef.current?.getView().setCenter(userLocation);
 	}, [featuresLayerSourceRef, updateLocationRef, userLocation]);
-
-	Geolocation.watchPosition({ enableHighAccuracy: false }, (newLocation: Position | null) => {
-		if (newLocation) {
-			setTimeout(
-				() =>
-					setUserLocation(
-						fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
-					),
-				1000
-			);
-		}
-	});
 
 	const handleMapClick = useCallback(
 		(event: MapBrowserEvent<UIEvent>) => {
@@ -194,15 +198,12 @@ const MapWrapper: React.FC = () => {
 			*/
 			if (!mapRef.current) return;
 			getNearestFromApi(event.coordinate).then((nearestPoint: Coordinate) => {
-				updateLocationRef(nearestPoint, nextPointLocationRef, nextLocationMapPin);
 				getRouteFromApi(userLocationRef.current!.coordinates, nearestPoint).then(
 					(foundRoute: IRouteItem) => {
-						clearPreviousRoute();
-						drawRoute(foundRoute.geometry);
-						fitMapViewToPoints(
-							userLocationRef.current?.coordinates,
-							nextPointLocationRef.current?.coordinates
-						);
+						setNextPointAndRoute({
+							point: nearestPoint,
+							route: foundRoute,
+						});
 						setLayoutDisplayMode('default');
 					}
 				);
@@ -218,7 +219,7 @@ const MapWrapper: React.FC = () => {
 		 */
 		mapRef.current?.getView().fit(new Point(userLocation), {
 			duration: 500,
-			maxZoom: 16
+			maxZoom: 16,
 		});
 	}, [userLocation]);
 
@@ -243,7 +244,7 @@ const MapWrapper: React.FC = () => {
 					center: [0, 0],
 					zoom: 18,
 				}),
-				controls: []
+				controls: [],
 			});
 			featuresLayerSourceRef.current = featureLayersSource;
 		}
