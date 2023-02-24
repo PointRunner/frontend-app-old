@@ -10,7 +10,7 @@ import XYZ from 'ol/source/XYZ';
 import Polyline from 'ol/format/Polyline';
 import { fromLonLat } from 'ol/proj';
 import { Coordinate } from 'ol/coordinate';
-import { Geometry, LineString, MultiPoint, Point } from 'ol/geom';
+import { Geometry, MultiPoint, Point } from 'ol/geom';
 import styled from 'styled-components';
 import Style from 'ol/style/Style';
 import Icon from 'ol/style/Icon';
@@ -72,7 +72,6 @@ const MapWrapper: React.FC = () => {
 	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
 	const generatedPointAndRoute =
 		useRecoilValue<IRandomGenerationResults | undefined>(generatedRouteState);
-	const setCenterViewFunction = useSetRecoilState(centerViewFunction);
 	const [layoutDisplayModeState, setLayoutDisplayMode] = useRecoilState(layoutDisplayMode);
 	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
@@ -139,12 +138,10 @@ const MapWrapper: React.FC = () => {
 		 * @param point1 - First point
 		 * @param point2 - Second point
 		 */
-		console.log(new MultiPoint([point1, point2]))
-		console.log(mapRef.current?.getSize())
 		mapRef.current?.getView().fit(new MultiPoint([point1, point2]), {
 			size: mapRef.current?.getSize() || [window.outerWidth, window.outerHeight],
 			padding: [200, 40, 200, 40],
-			duration: 500
+			duration: 500,
 		});
 	};
 
@@ -170,17 +167,21 @@ const MapWrapper: React.FC = () => {
 
 	useEffect(() => {
 		/*
-			Re-center the map according to the location of the user whenever it changes.
+			Re-center the map according to the location of the user when it first loads.
 		*/
+		updateLocationRef(userLocation, userLocationRef, userMapPin);	
 		mapRef.current?.getView().setCenter(userLocation);
-		updateLocationRef(userLocation, userLocationRef, userMapPin);
 	}, [featuresLayerSourceRef, updateLocationRef, userLocation]);
 
 	Geolocation.watchPosition({ enableHighAccuracy: false }, (newLocation: Position | null) => {
 		if (newLocation) {
-			setTimeout(() => setUserLocation(
-				fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
-			), 1000);
+			setTimeout(
+				() =>
+					setUserLocation(
+						fromLonLat([newLocation.coords.longitude, newLocation.coords.latitude])
+					),
+				1000
+			);
 		}
 	});
 
@@ -217,6 +218,7 @@ const MapWrapper: React.FC = () => {
 		 */
 		mapRef.current?.getView().fit(new Point(userLocation), {
 			duration: 500,
+			maxZoom: 16
 		});
 	}, [userLocation]);
 
@@ -241,11 +243,17 @@ const MapWrapper: React.FC = () => {
 					center: [0, 0],
 					zoom: 18,
 				}),
+				controls: []
 			});
 			featuresLayerSourceRef.current = featureLayersSource;
-			setCenterViewFunction(() => centerViewOnCurrentLocation());
 		}
-	}, [centerViewOnCurrentLocation, setCenterViewFunction]);
+	}, []);
+
+	const setCenterViewFunction = useSetRecoilState(centerViewFunction);
+	useEffect(
+		() => setCenterViewFunction(() => centerViewOnCurrentLocation),
+		[centerViewOnCurrentLocation, setCenterViewFunction]
+	);
 
 	useEffect(() => {
 		const setMapOnClick = () => {

@@ -21,7 +21,7 @@ const MapControls = () => {
 	const centerViewFunction = useRecoilValue(centerViewFunctionState);
     return (
         <IonRow>
-			<CustomFab style={{margin: "5% 0 0 2%"}} onClick={() => console.log(centerViewFunction)}>
+			<CustomFab style={{margin: "5% 0 0 2%"}} onClick={centerViewFunction}>
 				<IonIcon icon={locateOutline}  />
 			</CustomFab>
 		</IonRow>

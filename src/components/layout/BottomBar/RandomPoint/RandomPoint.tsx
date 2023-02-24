@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useRecoilValue, useRecoilState, useSetRecoilState } from 'recoil';
 import { IRouteGenerationParams } from '../../../../utils/MapUtils.d';
 import { generateRouteFunction, layoutDisplayMode, routeGenerationParams } from '../../../../utils/State';
+import { BottomBarTextButton } from '../Styles.BottomBar';
 import {
 	BottomBarInput,
 	BottomBarInputs,
 	BottomBarInputWrapper,
-	BottomBarMenuButton,
 	BottomBarMenuButtons,
 	ErrorMessage,
 } from './Styles.RandomPoint';
@@ -180,7 +180,8 @@ const RandomPoint = () => {
 				</BottomBarInputWrapper>
 			</BottomBarInputs>
 			<BottomBarMenuButtons>
-				<BottomBarMenuButton onClick={handleGenerateRoute}>Generate</BottomBarMenuButton>
+				<BottomBarTextButton onClick={() => setLayoutDisplayMode('default')}>Back</BottomBarTextButton>
+				<BottomBarTextButton onClick={handleGenerateRoute}>Generate</BottomBarTextButton>
 			</BottomBarMenuButtons>
 		</>
 	);

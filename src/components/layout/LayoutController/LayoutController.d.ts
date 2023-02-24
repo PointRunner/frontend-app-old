@@ -1,1 +1,1 @@
-export type displayMode = 'default' | 'random' | 'select';
+export type displayMode = 'default' | 'random' | 'select' | 'running';

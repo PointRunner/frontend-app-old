@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import variables from "../../../../variables";
-import { BottomBarFirstRow, BottomBarButton } from "../Styles.BottomBar";
+import { BottomBarFirstRow, BottomBarIconButton } from "../Styles.BottomBar";
 
 export const ErrorMessage = styled.p`
 	width: 100%;
@@ -57,10 +57,10 @@ export const BottomBarInput = styled.input`
 `;
 
 export const BottomBarMenuButtons = styled(BottomBarFirstRow)`
-	justify-content: end;
+	justify-content: space-between;
 `;
 
-export const BottomBarMenuButton = styled(BottomBarButton)`
+export const BottomBarMenuButton = styled(BottomBarIconButton)`
 	color: black;
 	padding: 15px 5px;
 	border-radius: 80px;
