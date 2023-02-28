@@ -2,15 +2,24 @@ import { Coordinate } from 'ol/coordinate';
 import { atom, RecoilState } from 'recoil';
 import { IPointAndRoute, IRouteGenerationParams } from './MapUtils.d';
 import { displayMode } from '../components/layout/LayoutController/LayoutController.d';
-import { IRunningStats } from './interfaces/interfaces';
+import { ERRORS, IRunningStats } from './interfaces/interfaces';
 
-const defaultRouteGenerationParams = {
+const defaultRouteGenerationParams: IRouteGenerationParams = {
 	minDistance: 1,
 	maxDistance: 5,
 	minHeading: 0,
 	maxHeading: 359,
 	showRoute: true,
 };
+
+const initialRunningStats: IRunningStats = {
+	isRunning: false,
+	distanceLeft: 0,
+	distanceTravelled: 0,
+	scoreAccumulated: 0,
+	secondsElapsed: 0,
+	speed: 0
+}
 
 export const routeGenerationParams = atom<IRouteGenerationParams>({
 	key: 'routeGenerationParams',
@@ -22,10 +31,20 @@ export const userLocationState: RecoilState<Coordinate> = atom({
 	default: [0, 0],
 });
 
+export const previousUserLocationState: RecoilState<Coordinate> = atom({
+	key: 'previousUserLocationState',
+	default: [0, 0],
+});
+
 
 export const RunningStatsState = atom<IRunningStats | {isRunning: boolean}>({
 	key: 'runningStatsState',
 	default: {isRunning: false}
+})
+
+export const PreviousRunningStatsState = atom<IRunningStats>({
+	key: 'previousRunningStatsState',
+	default: initialRunningStats
 })
 
 
@@ -53,3 +72,9 @@ export const centerViewFunction: RecoilState<() => void> = atom({
 		console.error('no center function defined!');
 	},
 });
+
+
+export const currentErrors = atom<ERRORS[]>({
+	key: 'currentErrors',
+	default: [] as ERRORS[]
+})

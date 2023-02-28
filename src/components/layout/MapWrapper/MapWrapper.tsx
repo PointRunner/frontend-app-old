@@ -1,5 +1,4 @@
-import { useEffect, useRef, useCallback, RefObject } from 'react';
-import { Geolocation, Position } from '@capacitor/geolocation';
+import { useEffect, useRef, useCallback, RefObject, useState } from 'react';
 
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -8,7 +7,6 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import XYZ from 'ol/source/XYZ';
 import Polyline from 'ol/format/Polyline';
-import { fromLonLat } from 'ol/proj';
 import { Coordinate } from 'ol/coordinate';
 import { Geometry, MultiPoint, Point } from 'ol/geom';
 import styled from 'styled-components';
@@ -27,7 +25,7 @@ import {
 	IRouteItem,
 } from '../../../utils/MapUtils.d';
 import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
-import { useRecoilState, useSetRecoilState } from 'recoil';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
 	centerViewFunction,
 	nextPointAndRouteState,
@@ -69,7 +67,7 @@ const routeStyle = new Style({
 });
 
 const MapWrapper: React.FC = () => {
-	const [userLocation, setUserLocation] = useRecoilState<Coordinate>(userLocationState);
+	const userLocation = useRecoilValue<Coordinate>(userLocationState);
 	const [nextPointAndRoute, setNextPointAndRoute] =
 		useRecoilState<IPointAndRoute | undefined>(nextPointAndRouteState);
 	const [layoutDisplayModeState, setLayoutDisplayMode] = useRecoilState(layoutDisplayMode);
@@ -79,18 +77,6 @@ const MapWrapper: React.FC = () => {
 	const userLocationRef = useRef<CoordAndFeature | null>();
 	const nextPointLocationRef = useRef<CoordAndFeature | null>();
 	const routeFeatureRef = useRef<Feature | null>();
-
-	Geolocation.watchPosition({ enableHighAccuracy: false }, (newLocation: Position | null) => {
-		if (newLocation) {
-			const newLocationCoords = fromLonLat([
-				newLocation.coords.longitude,
-				newLocation.coords.latitude,
-			]);
-			if (newLocationCoords !== userLocation) {
-				setUserLocation(newLocationCoords);
-			}
-		}
-	});
 
 	const drawRoute = (foundRoute: IRouteGeometry) => {
 		/*
@@ -165,14 +151,13 @@ const MapWrapper: React.FC = () => {
 				 */
 				clearPreviousRoute();
 				drawRoute(route.geometry);
-				fitMapViewToPoints(userLocation, newPoint);
+				fitMapViewToPoints(userLocationRef.current?.coordinates, newPoint);
 			};
 
 			updateLocationRef(newPoint, nextPointLocationRef, nextLocationMapPin);
 			displayNewRouteAndPoint();
-			
 		},
-		[updateLocationRef, userLocation]
+		[updateLocationRef]
 	);
 
 	useEffect(() => {
@@ -180,14 +165,6 @@ const MapWrapper: React.FC = () => {
 			handleNewPoint(nextPointAndRoute.point, nextPointAndRoute.route);
 		}
 	}, [handleNewPoint, nextPointAndRoute, updateLocationRef]);
-
-	useEffect(() => {
-		/*
-			Re-center the map according to the location of the user when it first loads.
-		*/
-		updateLocationRef(userLocation, userLocationRef, userMapPin);
-		mapRef.current?.getView().setCenter(userLocation);
-	}, [featuresLayerSourceRef, updateLocationRef, userLocation]);
 
 	const handleMapClick = useCallback(
 		(event: MapBrowserEvent<UIEvent>) => {
@@ -217,11 +194,21 @@ const MapWrapper: React.FC = () => {
 		/**
 		 * Set the view to center on the user location.
 		 */
-		mapRef.current?.getView().fit(new Point(userLocation), {
+		mapRef.current?.getView().fit(new Point(userLocationRef.current?.coordinates), {
 			duration: 500,
 			maxZoom: 16,
 		});
-	}, [userLocation]);
+	}, []);
+
+	useEffect(() => {
+		const areLocationsEqual = userLocation.every(
+			(elem, i) => elem === userLocationRef.current?.coordinates[i]
+		);
+		if (!userLocationRef.current || !areLocationsEqual) {
+			updateLocationRef(userLocation, userLocationRef, userMapPin);
+			centerViewOnCurrentLocation();
+		}
+	}, [centerViewOnCurrentLocation, updateLocationRef, userLocation]);
 
 	useEffect(() => {
 		if (mapElement.current && !mapRef.current) {

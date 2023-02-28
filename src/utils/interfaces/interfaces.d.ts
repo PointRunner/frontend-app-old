@@ -3,7 +3,10 @@ export interface IRunningStats {
     distanceTravelled: number,
     secondsElapsed: number,
     distanceLeft: number,
-    secondsLeft: number,
-    pointsAccumulated: number,
+    scoreAccumulated: number,
     speed: number
+}
+
+export enum ERRORS {
+    LOCATION_DISABLED
 }
