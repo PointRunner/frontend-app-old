@@ -60,8 +60,8 @@ export const nextPointAndRouteState = atom<IPointAndRoute | undefined>({
 	default: undefined,
 });
 
-export const layoutDisplayMode = atom<displayMode>({
-	key: 'layoutDisplayMode',
+export const layoutDisplayModeState = atom<displayMode>({
+	key: 'layoutDisplayModeState',
 	default: 'default',
 });
 

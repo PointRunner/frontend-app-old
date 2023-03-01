@@ -1,22 +1,25 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
 	BottomBarWrapper,
 } from './Styles.BottomBar';
-import { useSetRecoilState } from 'recoil';
-import { layoutDisplayMode } from '../../../utils/State';
+import { useRecoilValue, useSetRecoilState, useRecoilState } from 'recoil';
+import { layoutDisplayModeState, nextPointAndRouteState, RunningStatsState } from '../../../utils/State';
 import RandomPoint from './RandomPoint/RandomPoint';
 import SelectPoint from './SelectPoint/SelectPoint';
 import { displayMode } from '../LayoutController/LayoutController.d';
 import Default from './Default/Default';
+import Running from './Running/Running';
 
 interface IBottomBarProps {
 	menuDisplayMode: displayMode;
 }
 
 const BottomBar = (props: IBottomBarProps) => {
-	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayMode);
+	const [layoutDisplayMode, setLayoutDisplayMode] = useRecoilState(layoutDisplayModeState);
+	const setRunningStats = useSetRecoilState(RunningStatsState);
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
+	const nextPoint = useRecoilValue(nextPointAndRouteState);
 	const [currentlySelectedButton, setCurrentlySelectedButton] =
 		useState<HTMLButtonElement | null>(null);
 
@@ -30,6 +33,7 @@ const BottomBar = (props: IBottomBarProps) => {
 		const displayStates: { [key: string]: displayMode } = {
 			'select-point': 'select',
 			'random-point': 'random',
+			'start-running': 'running',
 		};
 
 		if (currentlySelectedButton === document.getElementById(buttonElementId)) {
@@ -46,9 +50,9 @@ const BottomBar = (props: IBottomBarProps) => {
 	};
 
 
-
-
-
+	useEffect(() => {
+		setRunningStats((old) => {return {...old, isRunning: layoutDisplayMode === "running"}})
+	}, [layoutDisplayMode, setRunningStats])
 
 
 
@@ -60,8 +64,10 @@ const BottomBar = (props: IBottomBarProps) => {
 						return <RandomPoint />;
 					case 'select':
 						return <SelectPoint />;
+					case 'running':
+						return <Running  handleTopButtonClick={handleTopButtonClick}/>;
 					case 'default':
-						return <Default handleTopButtonClick={handleTopButtonClick} />;
+						return <Default isPointSet={!!nextPoint} handleTopButtonClick={handleTopButtonClick} />;
 				}
 			})()}			
 		</BottomBarWrapper>

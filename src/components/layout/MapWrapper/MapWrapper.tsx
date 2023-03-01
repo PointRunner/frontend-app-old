@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, RefObject, useState } from 'react';
+import { useEffect, useRef, useCallback, RefObject } from 'react';
 
 import Map from 'ol/Map';
 import View from 'ol/View';
@@ -29,7 +29,7 @@ import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
 	centerViewFunction,
 	nextPointAndRouteState,
-	layoutDisplayMode,
+	layoutDisplayModeState,
 	userLocationState,
 } from '../../../utils/State';
 
@@ -70,7 +70,7 @@ const MapWrapper: React.FC = () => {
 	const userLocation = useRecoilValue<Coordinate>(userLocationState);
 	const [nextPointAndRoute, setNextPointAndRoute] =
 		useRecoilState<IPointAndRoute | undefined>(nextPointAndRouteState);
-	const [layoutDisplayModeState, setLayoutDisplayMode] = useRecoilState(layoutDisplayMode);
+	const [layoutDisplayMode, setLayoutDisplayMode] = useRecoilState(layoutDisplayModeState);
 	const mapElement: RefObject<HTMLDivElement> = useRef<HTMLDivElement>(null);
 	const mapRef = useRef<Map | null>();
 	const featuresLayerSourceRef = useRef<VectorSource<Geometry>>();
@@ -248,12 +248,12 @@ const MapWrapper: React.FC = () => {
 			/**
 			 * Set the ability of the user to pick a point on the map, according to the state of the layout.
 			 */
-			if (layoutDisplayModeState === 'select') {
+			if (layoutDisplayMode === 'select') {
 				mapRef.current?.on('click', handleMapClick);
 			} else mapRef.current?.un('click', handleMapClick);
 		};
 		setMapOnClick();
-	}, [handleMapClick, layoutDisplayModeState]);
+	}, [handleMapClick, layoutDisplayMode]);
 
 	return (
 		<>

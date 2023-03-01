@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRecoilValue, useRecoilState, useSetRecoilState } from 'recoil';
 import { IRouteGenerationParams } from '../../../../utils/MapUtils.d';
-import { generateRouteFunction, layoutDisplayMode, routeGenerationParams } from '../../../../utils/State';
+import { generateRouteFunction, layoutDisplayModeState, routeGenerationParams } from '../../../../utils/State';
 import { BottomBarTextButton } from '../Styles.BottomBar';
 import {
 	BottomBarInput,
@@ -14,7 +14,7 @@ import {
 const RandomPoint = () => {
     
 	const generateRouteFunc = useRecoilValue(generateRouteFunction);
-	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayMode);
+	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayModeState);
 	const [errorMessage, setErrorMessage] = useState<String>('');
 	const [routeParams, setRouteParams] =
 		useRecoilState<IRouteGenerationParams>(routeGenerationParams);

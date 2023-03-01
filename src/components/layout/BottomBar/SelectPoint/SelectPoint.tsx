@@ -1,10 +1,10 @@
 import { useSetRecoilState } from "recoil";
-import { layoutDisplayMode } from "../../../../utils/State";
+import { layoutDisplayModeState } from "../../../../utils/State";
 import { BottomBarTextButton } from "../Styles.BottomBar";
 import { SelectPointText } from "./Styles.SelectPoint";
 
 const SelectPoint = () => {
-    const setLayoutDisplayMode = useSetRecoilState(layoutDisplayMode);
+    const setLayoutDisplayMode = useSetRecoilState(layoutDisplayModeState);
     return (
         <div>
             <SelectPointText>Select a point by clicking on the map</SelectPointText>

@@ -10,7 +10,13 @@ background: linear-gradient(
 );
 transition: all 350ms ease;
 font-size: ${variables.sizes.fontMedium};
-&:hover, &:active {
+
+&:disabled {
+    background: ${variables.disabledColor};
+    color: ${variables.darkColor};
+}
+
+&:enabled:hover, &:enabled:active, &:enabled:focus {
     scale: 110%;
     background-color: ${variables.primaryColorDarker};
 `;

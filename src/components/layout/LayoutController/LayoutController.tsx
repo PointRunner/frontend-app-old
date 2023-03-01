@@ -1,5 +1,5 @@
 import { useRecoilValue } from 'recoil';
-import { layoutDisplayMode } from '../../../utils/State';
+import { layoutDisplayModeState } from '../../../utils/State';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import MapController from '../../control/MapController';
 import BottomBar from '../BottomBar/BottomBar';
@@ -32,12 +32,12 @@ const StyleTransitionContainer = styled.div`
 `;
 
 const LayoutController = () => {
-	const layoutDisplayModeState = useRecoilValue(layoutDisplayMode);
+	const layoutDisplayMode = useRecoilValue(layoutDisplayModeState);
 	return (
 		<>
 			<TransitionGroup component={StyleTransitionContainer}>
 				<CSSTransition
-					in={layoutDisplayModeState !== 'running'}
+					in={layoutDisplayMode !== 'running'}
 					timeout={500}
 					classNames="layout-element-top"
 				>
@@ -47,7 +47,7 @@ const LayoutController = () => {
 			<MapController>
 				<MapWrapper />
 			</MapController>
-			<BottomBar menuDisplayMode={layoutDisplayModeState} />
+			<BottomBar menuDisplayMode={layoutDisplayMode} />
 		</>
 	);
 };
