@@ -44,10 +44,10 @@ const TopBarInfo = (props: TopBarInfoProps) => {
 			 * Format the seconds elapsed into a nicer-looking clock.
 			 */
 			let seconds = props.runningStats.secondsElapsed;
-			const hours = (seconds % 3600).toString().padStart(2, '0');
-			seconds /= seconds % 3600 * 3600;
-			const minutes = (seconds % 60).toString().padStart(2, '0');
-			seconds /= seconds % 60 * 60;
+			const hours = (Math.floor(seconds / 3600)).toString().padStart(2, '0');
+			seconds %= 3600;
+			const minutes = (Math.floor(seconds / 60)).toString().padStart(2, '0');
+			seconds %= 60;
 			const finalSeconds = seconds.toString().padStart(2, '0');
 			const clockFormattedTime = `${hours}:${minutes}:${finalSeconds}`
 			setFormattedTime(clockFormattedTime);
@@ -65,10 +65,10 @@ const TopBarInfo = (props: TopBarInfoProps) => {
 				</IonRow>
 				<IonRow>
 					<IonCol>
-						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.distanceLeft}km Left</TopBarInfoText>
+						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.distanceLeft / 1000}km Left</TopBarInfoText>
 					</IonCol>
 					<IonCol>
-						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.distanceTravelled}km Passed</TopBarInfoText>
+						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.distanceTravelled / 1000}km Ran</TopBarInfoText>
 					</IonCol>
 					<IonCol>
 						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.speed}km/h</TopBarInfoText>

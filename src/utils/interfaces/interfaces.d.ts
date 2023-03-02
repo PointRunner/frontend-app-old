@@ -1,5 +1,5 @@
 export interface IRunningStats {
-    isRunning: false
+    isRunning: boolean,
     distanceTravelled: number,
     secondsElapsed: number,
     distanceLeft: number,

@@ -63,21 +63,23 @@ const RunningUpdater = () => {
 				newScore += calculateScoreFromDistance(distanceDelta);
 			}
 			setPreviousRunningStats(runningStats);
-			setRunningStats({
-				...previousRunningStats,
-				distanceTravelled: previousRunningStats.distanceTravelled + addedTravelledDistance,
-				scoreAccumulated: previousRunningStats.scoreAccumulated + newScore,
+			setRunningStats((old) => {return {
+				...old,
+				distanceTravelled: old.distanceTravelled + addedTravelledDistance,
+				scoreAccumulated: old.scoreAccumulated + newScore,
 				distanceLeft: newDistance,
 				speed: calculateSpeedFromDistance(distanceDelta),
-				secondsElapsed: previousRunningStats.secondsElapsed + POLLING_RATE_MS / 1000,
-			});
+				secondsElapsed: old.secondsElapsed + POLLING_RATE_MS / 1000,
+			}});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [nextPointAndRoute, userLocation]);
 
 	useEffect(() => {
-		updateRunningStats();
-	}, [userLocation, nextPointAndRoute, updateRunningStats]);
+		if (runningStats.isRunning) {
+			updateRunningStats();
+		}
+	}, [userLocation, nextPointAndRoute, updateRunningStats, runningStats.isRunning]);
 
 	const verifyLocationPermissions = async (): Promise<boolean> => {
 		/**
@@ -115,12 +117,19 @@ const RunningUpdater = () => {
 						currentPositionLonLat.coords.longitude,
 						currentPositionLonLat.coords.latitude,
 					]);
-					setPreviousUserLocation(userLocation)
+					if (previousUserLocation[0] === 0 && previousUserLocation[1] === 0) {
+						setPreviousUserLocation(currentPosition)
+					}
+					else {
+						setPreviousUserLocation(userLocation)
+					}
 					setUserLocation(currentPosition);
 				}
 			)
 		})		
 	};
+
+	useEffect(() => console.log(runningStats), [runningStats])
 
 
 

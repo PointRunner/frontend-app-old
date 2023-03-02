@@ -37,9 +37,9 @@ export const previousUserLocationState: RecoilState<Coordinate> = atom({
 });
 
 
-export const RunningStatsState = atom<IRunningStats | {isRunning: boolean}>({
+export const RunningStatsState = atom<IRunningStats>({
 	key: 'runningStatsState',
-	default: {isRunning: false}
+	default: initialRunningStats
 })
 
 export const PreviousRunningStatsState = atom<IRunningStats>({
