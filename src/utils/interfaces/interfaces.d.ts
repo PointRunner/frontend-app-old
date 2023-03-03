@@ -7,6 +7,12 @@ export interface IRunningStats {
     speed: number
 }
 
+export interface IRunningStatsInitializationData {
+    distanceLeft: number,
+    speed: number,
+    isRunning?: boolean
+}
+
 export enum ERRORS {
     LOCATION_DISABLED
 }

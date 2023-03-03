@@ -9,10 +9,8 @@ interface TopBarInfoVisualProps {
 }
 
 interface TopBarInfoProps extends TopBarInfoVisualProps {
-	runningStats: IRunningStats
+	runningStats: IRunningStats;
 }
-
-
 
 const TopBarInfoText = styled.div<TopBarInfoVisualProps>`
 	text-align: center;
@@ -26,16 +24,15 @@ const TopBarInfoLarge = styled(TopBarInfoText)`
 `;
 
 const TopBarWrapper = styled.div<TopBarInfoVisualProps>`
-    margin: auto;
+	margin: auto;
 	width: 90%;
 	background-color: ${(props) => props.backgroundColor || 'white'};
 	border-bottom-left-radius: 300px 300px;
-    border-bottom-right-radius: 300px 300px;
-    padding: 0 6% 2.5% 6%;
+	border-bottom-right-radius: 300px 300px;
+	padding: 0 6% 2.5% 6%;
 `;
 
 const TopBarInfo = (props: TopBarInfoProps) => {
-
 	const [formattedTime, setFormattedTime] = useState<string>('00:00:00');
 
 	useEffect(() => {
@@ -44,34 +41,46 @@ const TopBarInfo = (props: TopBarInfoProps) => {
 			 * Format the seconds elapsed into a nicer-looking clock.
 			 */
 			let seconds = props.runningStats.secondsElapsed;
-			const hours = (Math.floor(seconds / 3600)).toString().padStart(2, '0');
+			const hours = Math.floor(seconds / 3600)
+				.toString()
+				.padStart(2, '0');
 			seconds %= 3600;
-			const minutes = (Math.floor(seconds / 60)).toString().padStart(2, '0');
+			const minutes = Math.floor(seconds / 60)
+				.toString()
+				.padStart(2, '0');
 			seconds %= 60;
 			const finalSeconds = seconds.toString().padStart(2, '0');
-			const clockFormattedTime = `${hours}:${minutes}:${finalSeconds}`
+			const clockFormattedTime = `${hours}:${minutes}:${finalSeconds}`;
 			setFormattedTime(clockFormattedTime);
-		}
+		};
 		formatSecondsToClock();
-	}, [props.runningStats.secondsElapsed])
-	
+	}, [props.runningStats.secondsElapsed]);
+
 	return (
 		<TopBarWrapper backgroundColor={props.backgroundColor}>
 			<IonGrid>
 				<IonRow style={{ marginBottom: '3%' }}>
 					<IonCol>
-						<TopBarInfoLarge textColor={props.textColor}>{formattedTime}</TopBarInfoLarge>
+						<TopBarInfoLarge textColor={props.textColor}>
+							{formattedTime}
+						</TopBarInfoLarge>
 					</IonCol>
 				</IonRow>
 				<IonRow>
 					<IonCol>
-						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.distanceLeft / 1000}km Left</TopBarInfoText>
+						<TopBarInfoText textColor={props.textColor}>
+							{(props.runningStats.distanceLeft / 1000).toFixed(2)}km Left
+						</TopBarInfoText>
 					</IonCol>
 					<IonCol>
-						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.distanceTravelled / 1000}km Ran</TopBarInfoText>
+						<TopBarInfoText textColor={props.textColor}>
+							{(props.runningStats.distanceTravelled / 1000).toFixed(2)}km Ran
+						</TopBarInfoText>
 					</IonCol>
 					<IonCol>
-						<TopBarInfoText  textColor={props.textColor}>{props.runningStats.speed}km/h</TopBarInfoText>
+						<TopBarInfoText textColor={props.textColor}>
+							{props.runningStats.speed.toFixed(1)}km/h
+						</TopBarInfoText>
 					</IonCol>
 				</IonRow>
 			</IonGrid>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { getRouteDistance } from '../../utils/MapUtils';
@@ -6,24 +6,29 @@ import {
 	userLocationState,
 	RunningStatsState,
 	nextPointAndRouteState,
-	PreviousRunningStatsState,
 	currentErrors,
 	previousUserLocationState,
+	runningFunctions,
 } from '../../utils/State';
-import { ERRORS } from '../../utils/interfaces/interfaces.d';
+import { ERRORS, IRunningStatsInitializationData } from '../../utils/interfaces/interfaces.d';
 import { fromLonLat } from 'ol/proj';
+import { Coordinate } from 'ol/coordinate';
+import { IPointAndRoute } from '../../utils/MapUtils.d';
 
 const POLLING_RATE_MS = 1000;
 
 const RunningUpdater = () => {
 	const [userLocation, setUserLocation] = useRecoilState(userLocationState);
+	const setRunningFunctions = useSetRecoilState(runningFunctions);
 	const [previousUserLocation, setPreviousUserLocation] =
 		useRecoilState(previousUserLocationState);
 	const nextPointAndRoute = useRecoilValue(nextPointAndRouteState);
 	const [runningStats, setRunningStats] = useRecoilState(RunningStatsState);
-	const [previousRunningStats, setPreviousRunningStats] =
-		useRecoilState(PreviousRunningStatsState);
+
 	const setCurrentErrors = useSetRecoilState(currentErrors);
+
+	const userLocationRef = useRef<Coordinate>();
+	const nextPointAndRouteRef = useRef<IPointAndRoute>();
 
 	const calculateScoreFromDistance = (distance: number): number => {
 		/**
@@ -51,26 +56,33 @@ const RunningUpdater = () => {
 		/**
 		 * Update the running stats according to the
 		 */
-		if (nextPointAndRoute && 'distanceTravelled' in runningStats) {
-			const newDistance = await getRouteDistance(userLocation, nextPointAndRoute.point);
+		if (nextPointAndRouteRef.current && userLocationRef.current) {
+			const newDistance = await getRouteDistance(
+				userLocationRef.current,
+				nextPointAndRouteRef.current.point
+			);
 			const addedTravelledDistance = await getRouteDistance(
 				userLocation,
 				previousUserLocation
 			);
 			let newScore = 0;
-			const distanceDelta = newDistance - previousRunningStats.distanceLeft;
+			const distanceDelta = newDistance - runningStats.distanceLeft;
 			if (distanceDelta > 0) {
 				newScore += calculateScoreFromDistance(distanceDelta);
 			}
-			setPreviousRunningStats(runningStats);
-			setRunningStats((old) => {return {
-				...old,
-				distanceTravelled: old.distanceTravelled + addedTravelledDistance,
-				scoreAccumulated: old.scoreAccumulated + newScore,
-				distanceLeft: newDistance,
-				speed: calculateSpeedFromDistance(distanceDelta),
-				secondsElapsed: old.secondsElapsed + POLLING_RATE_MS / 1000,
-			}});
+			setRunningStats((old) => {
+				return {
+					...old,
+					distanceTravelled: old.distanceTravelled + addedTravelledDistance,
+					scoreAccumulated: old.scoreAccumulated + newScore,
+					distanceLeft: newDistance,
+					speed:
+						(old.speed * old.secondsElapsed +
+							calculateSpeedFromDistance(distanceDelta)) /
+						(old.secondsElapsed + POLLING_RATE_MS / 1000),
+					secondsElapsed: old.secondsElapsed + POLLING_RATE_MS / 1000,
+				};
+			});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [nextPointAndRoute, userLocation]);
@@ -111,35 +123,83 @@ const RunningUpdater = () => {
 		 */
 		verifyLocationPermissions().then((res: boolean) => {
 			if (!res) return;
-			Geolocation.getCurrentPosition({enableHighAccuracy: true, maximumAge: POLLING_RATE_MS - 100}).then(
-				(currentPositionLonLat) => {
-					const currentPosition = fromLonLat([
-						currentPositionLonLat.coords.longitude,
-						currentPositionLonLat.coords.latitude,
-					]);
-					if (previousUserLocation[0] === 0 && previousUserLocation[1] === 0) {
-						setPreviousUserLocation(currentPosition)
-					}
-					else {
-						setPreviousUserLocation(userLocation)
-					}
-					setUserLocation(currentPosition);
+			Geolocation.getCurrentPosition({
+				enableHighAccuracy: true,
+				maximumAge: POLLING_RATE_MS - 100,
+			}).then((currentPositionLonLat) => {
+				const currentPosition = fromLonLat([
+					currentPositionLonLat.coords.longitude,
+					currentPositionLonLat.coords.latitude,
+				]);
+				if (previousUserLocation[0] === 0 && previousUserLocation[1] === 0) {
+					setPreviousUserLocation(currentPosition);
+				} else {
+					setPreviousUserLocation(userLocation);
 				}
-			)
-		})		
+				setUserLocation(currentPosition);
+			});
+		});
 	};
 
-	useEffect(() => console.log(runningStats), [runningStats])
+	const startRunning = () => {
+		/**
+		 * Initialize the runningStats state according to the route chosen
+		 */
+		console.log('STARTING');
+		setRunningStats((old) => {
+			return { ...old, isRunning: true };
+		});
 
+	};
 
+	const initializeRunningStats = useCallback(() => {
+		if (!nextPointAndRouteRef.current || !userLocationRef.current) return;
+		getRouteDistance(userLocationRef.current, nextPointAndRouteRef.current.point).then(
+			(initialDistance) => {
+				const initialRunningStatsUpdate: IRunningStatsInitializationData = {
+					distanceLeft: initialDistance,
+					speed: 0,
+				};
+				setRunningStats((old) => {return {...old, ...initialRunningStatsUpdate}});
+			}
+		);
+	}, [setRunningStats]);
+
+	const stopRunning = () => {
+		/**
+		 * Set the runningStats state after a run has been stopped
+		 */
+		console.log('STOPPING');
+		const runningStatsUpdate: IRunningStatsInitializationData = {
+			distanceLeft: 0,
+			speed: 0,
+			isRunning: false,
+		};
+		setRunningStats((old) => {
+			return { ...old, ...runningStatsUpdate };
+		});
+	};
+
+	useEffect(() => console.log("current", runningStats), [runningStats]);
+
+	useEffect(() => {
+		userLocationRef.current = userLocation;
+		nextPointAndRouteRef.current = nextPointAndRoute;
+	}, [userLocation, nextPointAndRoute]);
+
+	useEffect(() => {
+		initializeRunningStats();
+	}, [initializeRunningStats, nextPointAndRoute]);
 
 	useEffect(() => {
 		const interval = setInterval(updateUserLocation, POLLING_RATE_MS);
+		setRunningFunctions({ start: startRunning, stop: stopRunning });
+
 		return () => clearInterval(interval);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
-	
-	return (<></>)
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	return <></>;
 };
 
 export default RunningUpdater;

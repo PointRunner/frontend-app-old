@@ -24,10 +24,11 @@ const BottomBar = (props: IBottomBarProps) => {
 		useState<HTMLButtonElement | null>(null);
 
 	
-		const handleTopButtonClick = (buttonElementId: string): void => {
+		const buttonClickHandler = (buttonElementId: string, callback?: () => void): void => {
 		/** 
             Handle any click on a top button (one of the two main ones). 
             @param buttonElementId - ID of the button element that was clicked.
+			@param callback - optional function to run after the button has been clicked
         */
 
 		const displayStates: { [key: string]: displayMode } = {
@@ -47,13 +48,8 @@ const BottomBar = (props: IBottomBarProps) => {
 			);
 			setLayoutDisplayMode(displayStates[buttonElementId]);
 		}
+		if (!!callback) callback(); 
 	};
-
-
-	useEffect(() => {
-		setRunningStats((old) => {return {...old, isRunning: layoutDisplayMode === "running"}})
-	}, [layoutDisplayMode, setRunningStats])
-
 
 
 	return (
@@ -65,9 +61,9 @@ const BottomBar = (props: IBottomBarProps) => {
 					case 'select':
 						return <SelectPoint />;
 					case 'running':
-						return <Running  handleTopButtonClick={handleTopButtonClick}/>;
+						return <Running buttonClickHandler={buttonClickHandler}/>;
 					case 'default':
-						return <Default isPointSet={!!nextPoint} handleTopButtonClick={handleTopButtonClick} />;
+						return <Default isPointSet={!!nextPoint} buttonClickHandler={buttonClickHandler} />;
 				}
 			})()}			
 		</BottomBarWrapper>

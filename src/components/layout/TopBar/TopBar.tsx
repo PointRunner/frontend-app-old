@@ -15,8 +15,8 @@ const TopBar: React.FC = () => {
 	return (
 		<IonGrid style={{ padding: '0' }}>
 			<IonRow>
-				<IonCol size="2"></IonCol>
-				<IonCol size="8" style={{ padding: '0' }}>
+				<IonCol size="1"></IonCol>
+				<IonCol size="10" style={{ padding: '0' }}>
 					{(() => {
 						if (runningStats.isRunning) {
 							return <TopBarInfo runningStats={runningStats as IRunningStats}/>;
@@ -27,7 +27,7 @@ const TopBar: React.FC = () => {
 						}
 					})()}
 				</IonCol>
-				<IonCol size="2"></IonCol>
+				<IonCol size="1"></IonCol>
 			</IonRow>
 			<MapControls />
 		</IonGrid>
