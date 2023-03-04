@@ -1,10 +1,10 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
 	BottomBarWrapper,
 } from './Styles.BottomBar';
-import { useRecoilValue, useSetRecoilState, useRecoilState } from 'recoil';
-import { layoutDisplayModeState, nextPointAndRouteState, RunningStatsState } from '../../../utils/State';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { layoutDisplayModeState, nextPointAndRouteState } from '../../../utils/State';
 import RandomPoint from './RandomPoint/RandomPoint';
 import SelectPoint from './SelectPoint/SelectPoint';
 import { displayMode } from '../LayoutController/LayoutController.d';
@@ -16,8 +16,7 @@ interface IBottomBarProps {
 }
 
 const BottomBar = (props: IBottomBarProps) => {
-	const [layoutDisplayMode, setLayoutDisplayMode] = useRecoilState(layoutDisplayModeState);
-	const setRunningStats = useSetRecoilState(RunningStatsState);
+	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayModeState);
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
 	const nextPoint = useRecoilValue(nextPointAndRouteState);
 	const [currentlySelectedButton, setCurrentlySelectedButton] =
@@ -36,8 +35,7 @@ const BottomBar = (props: IBottomBarProps) => {
 			'random-point': 'random',
 			'start-running': 'running',
 		};
-
-		if (currentlySelectedButton === document.getElementById(buttonElementId)) {
+		if (currentlySelectedButton?.id === buttonElementId) {
 			setCurrentlySelectedButton(null);
 			setLayoutDisplayMode('default');
 			setIsExpanded(false);
