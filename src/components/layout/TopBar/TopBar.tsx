@@ -13,24 +13,24 @@ const TopBar: React.FC = () => {
 	const runningStats = useRecoilValue(RunningStatsState);
 
 	return (
-		<IonGrid style={{ padding: '0' }}>
-			<IonRow>
-				<IonCol size="1"></IonCol>
-				<IonCol size="10" style={{ padding: '0' }}>
-					{(() => {
-						if (runningStats.isRunning) {
-							return <TopBarInfo runningStats={runningStats as IRunningStats}/>;
-						}
-
-						else {
-							return <TopBarInfoPlaceholder />
-						}
-					})()}
-				</IonCol>
-				<IonCol size="1"></IonCol>
-			</IonRow>
+		<>
+			<IonGrid style={{ padding: '0' }}>
+				<IonRow>
+					<IonCol size="1"></IonCol>
+					<IonCol size="10" style={{ padding: '0' }}>
+						{(() => {
+							if (runningStats.isRunning) {
+								return <TopBarInfo runningStats={runningStats as IRunningStats} />;
+							} else {
+								return <TopBarInfoPlaceholder />;
+							}
+						})()}
+					</IonCol>
+					<IonCol size="1"></IonCol>
+				</IonRow>
+			</IonGrid>
 			<MapControls />
-		</IonGrid>
+		</>
 	);
 };
 

@@ -1,16 +1,13 @@
 import styled from 'styled-components';
 import { BaseButton } from '../../../theme/Styles.Base';
-import variables from '../../../variables';
 
 export const BottomBarWrapper = styled.div`
-	background-color: ${variables.menuBackgroundColor};
 	width: 100%;
 	position: fixed;
 	bottom: 0;
 
 	padding: 5%;
 
-	border-top: solid 2px ${variables.primaryColorDarker};
 	transition: all 500ms linear;
 
 	&.expanded > div {

@@ -2,6 +2,7 @@ import { IonCol, IonGrid, IonRow } from '@ionic/react';
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { IRunningStats } from '../../../utils/interfaces/interfaces.d';
+import variables from '../../../variables';
 
 interface TopBarInfoVisualProps {
 	textColor?: string;
@@ -14,19 +15,22 @@ interface TopBarInfoProps extends TopBarInfoVisualProps {
 
 const TopBarInfoText = styled.div<TopBarInfoVisualProps>`
 	text-align: center;
-	font-size: 3vw;
+	font-size: clamp(12px, 3vw, 24px);
 	color: ${(props) => props.textColor || 'black'};
 `;
 
 const TopBarInfoLarge = styled(TopBarInfoText)`
-	${TopBarInfoText};
-	font-size: 7vw;
+	font-size: 200%;
 `;
+
+const TopBarInfoTextSmall = styled(TopBarInfoText)`
+	font-size: 75%;
+`
 
 const TopBarWrapper = styled.div<TopBarInfoVisualProps>`
 	margin: auto;
 	width: 90%;
-	background-color: ${(props) => props.backgroundColor || 'white'};
+	background: ${(props) => props.backgroundColor || variables.menuBackgroundColor};
 	border-bottom-left-radius: 300px 300px;
 	border-bottom-right-radius: 300px 300px;
 	padding: 0 6% 2.5% 6%;
@@ -62,24 +66,20 @@ const TopBarInfo = (props: TopBarInfoProps) => {
 				<IonRow style={{ marginBottom: '3%' }}>
 					<IonCol>
 						<TopBarInfoLarge textColor={props.textColor}>
-							{formattedTime}
+							{(props.runningStats.distanceTravelled / 1000).toFixed(2)}km
 						</TopBarInfoLarge>
+						<TopBarInfoTextSmall textColor={props.textColor}>
+							{props.runningStats.speed.toFixed(1)}km/h
+						</TopBarInfoTextSmall>
 					</IonCol>
 				</IonRow>
 				<IonRow>
 					<IonCol>
+						<TopBarInfoText textColor={props.textColor}>{formattedTime}</TopBarInfoText>
+					</IonCol>
+					<IonCol>
 						<TopBarInfoText textColor={props.textColor}>
 							{(props.runningStats.distanceLeft / 1000).toFixed(2)}km Left
-						</TopBarInfoText>
-					</IonCol>
-					<IonCol>
-						<TopBarInfoText textColor={props.textColor}>
-							{(props.runningStats.distanceTravelled / 1000).toFixed(2)}km Ran
-						</TopBarInfoText>
-					</IonCol>
-					<IonCol>
-						<TopBarInfoText textColor={props.textColor}>
-							{props.runningStats.speed.toFixed(1)}km/h
 						</TopBarInfoText>
 					</IonCol>
 				</IonRow>

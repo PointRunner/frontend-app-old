@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
-import { getRouteDistance } from '../../utils/MapUtils';
+import { getLineDistance, getRouteDistance } from '../../utils/MapUtils';
 import {
 	userLocationState,
 	RunningStatsState,
@@ -20,14 +20,15 @@ const POLLING_RATE_MS = 1000;
 const RunningUpdater = () => {
 	const [userLocation, setUserLocation] = useRecoilState(userLocationState);
 	const setRunningFunctions = useSetRecoilState(runningFunctions);
-	const [previousUserLocation, setPreviousUserLocation] =
-		useRecoilState(previousUserLocationState);
+
 	const nextPointAndRoute = useRecoilValue(nextPointAndRouteState);
 	const [runningStats, setRunningStats] = useRecoilState(RunningStatsState);
 
 	const setCurrentErrors = useSetRecoilState(currentErrors);
 
 	const userLocationRef = useRef<Coordinate>();
+	const previousUserLocationRef = useRef<Coordinate>(userLocation);
+
 	const nextPointAndRouteRef = useRef<IPointAndRoute>();
 
 	const calculateScoreFromDistance = (distance: number): number => {
@@ -38,7 +39,7 @@ const RunningUpdater = () => {
 		 *
 		 * @returns number - Calculated score.
 		 */
-		return distance;
+		return Math.max(0, distance);
 	};
 
 	const calculateSpeedFromDistance = (distance: number): number => {
@@ -61,9 +62,9 @@ const RunningUpdater = () => {
 				userLocationRef.current,
 				nextPointAndRouteRef.current.point
 			);
-			const addedTravelledDistance = await getRouteDistance(
-				userLocation,
-				previousUserLocation
+			const addedTravelledDistance = getLineDistance(
+				userLocationRef.current,
+				previousUserLocationRef.current || userLocationRef.current
 			);
 			let newScore = 0;
 			const distanceDelta = newDistance - runningStats.distanceLeft;
@@ -76,16 +77,13 @@ const RunningUpdater = () => {
 					distanceTravelled: old.distanceTravelled + addedTravelledDistance,
 					scoreAccumulated: old.scoreAccumulated + newScore,
 					distanceLeft: newDistance,
-					speed:
-						(old.speed * old.secondsElapsed +
-							calculateSpeedFromDistance(distanceDelta)) /
-						(old.secondsElapsed + POLLING_RATE_MS / 1000),
+					speed: calculateSpeedFromDistance(addedTravelledDistance),
 					secondsElapsed: old.secondsElapsed + POLLING_RATE_MS / 1000,
 				};
 			});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [nextPointAndRoute, userLocation]);
+	}, []);
 
 	useEffect(() => {
 		if (runningStats.isRunning) {
@@ -127,16 +125,25 @@ const RunningUpdater = () => {
 				enableHighAccuracy: true,
 				maximumAge: POLLING_RATE_MS - 100,
 			}).then((currentPositionLonLat) => {
-				const currentPosition = fromLonLat([
+				let currentPosition = fromLonLat([
 					currentPositionLonLat.coords.longitude,
 					currentPositionLonLat.coords.latitude,
 				]);
-				if (previousUserLocation[0] === 0 && previousUserLocation[1] === 0) {
-					setPreviousUserLocation(currentPosition);
-				} else {
-					setPreviousUserLocation(userLocation);
+				if (nextPointAndRouteRef.current) {
+					currentPosition = [
+						userLocationRef.current![0] +
+							(nextPointAndRouteRef.current?.point[0] - userLocationRef.current![0]) /
+								100,
+						userLocationRef.current![1] +
+							(nextPointAndRouteRef.current?.point[1] - userLocationRef.current![1]) /
+								100,
+					];
 				}
-				setUserLocation(currentPosition);
+
+				setUserLocation((previous) => {
+					previousUserLocationRef.current = previous;
+					return currentPosition;
+				});
 			});
 		});
 	};
@@ -149,7 +156,6 @@ const RunningUpdater = () => {
 		setRunningStats((old) => {
 			return { ...old, isRunning: true };
 		});
-
 	};
 
 	const initializeRunningStats = useCallback(() => {
@@ -160,7 +166,9 @@ const RunningUpdater = () => {
 					distanceLeft: initialDistance,
 					speed: 0,
 				};
-				setRunningStats((old) => {return {...old, ...initialRunningStatsUpdate}});
+				setRunningStats((old) => {
+					return { ...old, ...initialRunningStatsUpdate };
+				});
 			}
 		);
 	}, [setRunningStats]);
@@ -180,7 +188,7 @@ const RunningUpdater = () => {
 		});
 	};
 
-	useEffect(() => console.log("current", runningStats), [runningStats]);
+	useEffect(() => console.log('current', runningStats), [runningStats]);
 
 	useEffect(() => {
 		userLocationRef.current = userLocation;
@@ -199,7 +207,7 @@ const RunningUpdater = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	return <></>;
+	return <div></div>;
 };
 
 export default RunningUpdater;

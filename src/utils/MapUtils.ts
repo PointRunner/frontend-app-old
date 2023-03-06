@@ -161,6 +161,19 @@ export const getRouteDistance = async (point1: Coordinate, point2: Coordinate): 
 	return route.distance;
 }
 
+
+export const getLineDistance = (point1: Coordinate, point2: Coordinate): number => {
+	/**
+	 * Get the line between two points.
+	 * 
+	 * @param point1 - 1st point EPSG:3857
+	 * @param point2 - 2nd point EPSG:3857
+	 * 
+	 * @returns number - Distance in meters
+	 */
+	return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2))
+}
+
 const randomFloat = (min: number, max: number): number => {
 	/** 
     * Generate a random float number between two boundaries.
