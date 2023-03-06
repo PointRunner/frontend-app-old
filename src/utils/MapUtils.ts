@@ -1,15 +1,52 @@
 import { Coordinate } from 'ol/coordinate';
 import transformTranslate from '@turf/transform-translate';
 import { point } from '@turf/helpers';
-import midpoint from '@turf/midpoint'
+import midpoint from '@turf/midpoint';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import {
 	INearestResponse,
 	IRouteResponse,
 	IRouteItem,
 	IPointAndRoute,
+	IIsochroneResponse,
 } from './MapUtils.d';
 import { GeoJSONPoint } from 'ol/format/GeoJSON';
+
+const getIsochroneFromApi = (
+	currentLocation: Coordinate,
+	maxDistance: number,
+	minDistance: number
+): Promise<Coordinate[]> => {
+	/**
+	 * Get the isochrone (min-max range for random generation) for the random generation.
+	 *
+	 * @param currentLocation - Current user location (EPSG:3857)
+	 * @param maxDistance - Maximum distance (km)
+	 * @param minDistance - Minimum distance (km)
+	 *
+	 * @returns List of possible coordinates to pick from (LonLat).
+	 */
+	return new Promise((resolve, reject) => {
+		const chosenRandomDistance = Math.random() * (maxDistance - minDistance + 1) + minDistance;
+		currentLocation = toLonLat(currentLocation);
+		const locationLonLat = { lon: currentLocation[0], lat: currentLocation[1] };
+		fetch(`https://valhalla1.openstreetmap.de/isochrone?json={"locations":[${JSON.stringify(
+			locationLonLat
+		)}],"costing":"pedestrian","contours":[{"distance":${chosenRandomDistance},"color":"ff0000"}]}
+		`)
+			.then((res) => {
+				if (res.status === 200) return res.json();
+				reject(
+					res.json().then((json) => {
+						return json.error;
+					})
+				);
+			})
+			.then((data: IIsochroneResponse) => {
+				resolve(data.features[0].geometry.coordinates);
+			});
+	});
+};
 
 export const getRouteFromApi = (start: Coordinate, end: Coordinate): Promise<IRouteItem> => {
 	/*
@@ -124,64 +161,66 @@ export const generatePointToRun = async (
 				fromLonLat(rawGeneratedPoint.geometry.coordinates)
 			);
 			generatedRoute = await getRouteFromApi(currentLocation, foundPoint);
-			console.log(generatedRoute.distance)
-			if (generatedRoute.distance <= maxDistance * 1000 && generatedRoute.distance >= minDistance * 1000)
+			console.log(generatedRoute.distance);
+			if (
+				generatedRoute.distance <= maxDistance * 1000 &&
+				generatedRoute.distance >= minDistance * 1000
+			)
 				isRouteFound = true;
 		} catch (err) {
 			console.error(err);
 		}
 	} while (!isRouteFound);
-	return { route: generatedRoute, point: foundPoint };
+	return { route: generatedRoute, point: foundPoint! };
 };
 
 export const getMidpoint = (start: Coordinate, end: Coordinate): Coordinate => {
 	/**
 	 * Get the midpoint between two points on a map.
-	 * 
+	 *
 	 * @param start - 1st point
 	 * @param end   - 2nd point
-	 * 
+	 *
 	 * @returns Coordinate - The found midpoint
 	 */
 	const [startLonLat, endLonLat] = [point(toLonLat(start)), point(toLonLat(end))];
 	const midpointLonLat = midpoint(startLonLat, endLonLat);
 	return fromLonLat(midpointLonLat.geometry.coordinates);
-}
+};
 
 export const getRouteDistance = async (point1: Coordinate, point2: Coordinate): Promise<number> => {
 	/**
 	 * Get the road distance (not line) between two points.
-	 * 
+	 *
 	 * @param point1 - 1st point EPSG:3857
 	 * @param point2 - 2nd point EPSG:3857
-	 * 
+	 *
 	 * @returns number - Distance in meters
 	 */
 	const route = await getRouteFromApi(point1, point2);
 	return route.distance;
-}
-
+};
 
 export const getLineDistance = (point1: Coordinate, point2: Coordinate): number => {
 	/**
 	 * Get the line between two points.
-	 * 
+	 *
 	 * @param point1 - 1st point EPSG:3857
 	 * @param point2 - 2nd point EPSG:3857
-	 * 
+	 *
 	 * @returns number - Distance in meters
 	 */
-	return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2))
-}
+	return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
+};
 
 const randomFloat = (min: number, max: number): number => {
-	/** 
-    * Generate a random float number between two boundaries.
-	*
-    * @param min
-    * @param max
-    * @returns a random number.
-	*
-    */
+	/**
+	 * Generate a random float number between two boundaries.
+	 *
+	 * @param min
+	 * @param max
+	 * @returns a random number.
+	 *
+	 */
 	return Math.random() * (max - min) + min;
 };

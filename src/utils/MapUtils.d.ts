@@ -1,3 +1,5 @@
+import { Coordinate } from "ol/coordinate";
+
 export interface INearestResponse {
 	code: string;
 	waypoints?: {
@@ -6,6 +8,20 @@ export interface INearestResponse {
 		name?: string;
 		location?: number[];
 	}[];
+}
+
+export interface IIsochroneResponse {
+	features: {
+		properties: {
+			[key: string]: number | string
+		},
+		geometry: {
+			coordinates: Coordinate[],
+			type: string
+		}
+		type: string
+	}[],
+	type: string
 }
 
 export interface IRouteItem {

@@ -151,7 +151,7 @@ const MapWrapper: React.FC = () => {
 				 */
 				clearPreviousRoute();
 				drawRoute(route.geometry);
-				fitMapViewToPoints(userLocationRef.current?.coordinates, newPoint);
+				fitMapViewToPoints(userLocationRef.current!.coordinates, newPoint);
 			};
 
 			updateLocationRef(newPoint, nextPointLocationRef, nextLocationMapPin);
@@ -194,7 +194,7 @@ const MapWrapper: React.FC = () => {
 		/**
 		 * Set the view to center on the user location.
 		 */
-		mapRef.current?.getView().fit(new Point(userLocationRef.current?.coordinates), {
+		mapRef.current?.getView().fit(new Point(userLocationRef.current!.coordinates), {
 			duration: 500,
 			maxZoom: 16,
 		});
