@@ -4,7 +4,8 @@ export interface IRunningStats {
     secondsElapsed: number,
     distanceLeft: number,
     scoreAccumulated: number,
-    speed: number
+    speed: number,
+    passedPoints: number,
 }
 
 export interface IRunningStatsInitializationData {

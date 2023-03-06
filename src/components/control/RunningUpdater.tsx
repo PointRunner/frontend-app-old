@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import { getLineDistance, getRouteDistance } from '../../utils/MapUtils';
@@ -7,8 +7,8 @@ import {
 	RunningStatsState,
 	nextPointAndRouteState,
 	currentErrors,
-	previousUserLocationState,
 	runningFunctions,
+	layoutDisplayModeState,
 } from '../../utils/State';
 import { ERRORS, IRunningStatsInitializationData } from '../../utils/interfaces/interfaces.d';
 import { fromLonLat } from 'ol/proj';
@@ -18,6 +18,8 @@ import { IPointAndRoute } from '../../utils/MapUtils.d';
 const POLLING_RATE_MS = 1000;
 
 const RunningUpdater = () => {
+	const RANGE_FOR_COMPLETION_METERS = 10;
+
 	const [userLocation, setUserLocation] = useRecoilState(userLocationState);
 	const setRunningFunctions = useSetRecoilState(runningFunctions);
 
@@ -25,6 +27,7 @@ const RunningUpdater = () => {
 	const [runningStats, setRunningStats] = useRecoilState(RunningStatsState);
 
 	const setCurrentErrors = useSetRecoilState(currentErrors);
+	const setLayoutDisplayMode = useSetRecoilState(layoutDisplayModeState)
 
 	const userLocationRef = useRef<Coordinate>();
 	const previousUserLocationRef = useRef<Coordinate>(userLocation);
@@ -66,24 +69,33 @@ const RunningUpdater = () => {
 				userLocationRef.current,
 				previousUserLocationRef.current || userLocationRef.current
 			);
-			let newScore = 0;
-			const distanceDelta = newDistance - runningStats.distanceLeft;
-			if (distanceDelta > 0) {
-				newScore += calculateScoreFromDistance(distanceDelta);
-			}
 			setRunningStats((old) => {
 				return {
 					...old,
 					distanceTravelled: old.distanceTravelled + addedTravelledDistance,
-					scoreAccumulated: old.scoreAccumulated + newScore,
+					scoreAccumulated:
+						old.scoreAccumulated +
+						calculateScoreFromDistance(Math.max(0, old.distanceLeft - newDistance )),
 					distanceLeft: newDistance,
 					speed: calculateSpeedFromDistance(addedTravelledDistance),
 					secondsElapsed: old.secondsElapsed + POLLING_RATE_MS / 1000,
 				};
 			});
+			if (newDistance <= RANGE_FOR_COMPLETION_METERS) completeRun();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	const completeRun = () => {
+		/**
+		 * Triggered when a run has been completed (user has reached next point.)
+		 */
+		console.log('RUN FINISHED');
+		setRunningStats((old) => {
+			return { ...old, isRunning: false, passedPoints: old.passedPoints + 1 };
+		});
+		setLayoutDisplayMode('default')
+	};
 
 	useEffect(() => {
 		if (runningStats.isRunning) {

@@ -19,6 +19,7 @@ export const initialRunningStats: IRunningStats = {
 	scoreAccumulated: 0,
 	secondsElapsed: 0,
 	speed: 0,
+	passedPoints: 0
 };
 
 export const routeGenerationParams = atom<IRouteGenerationParams>({
