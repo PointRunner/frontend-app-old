@@ -1,22 +1,21 @@
 import { Coordinate } from 'ol/coordinate';
-import transformTranslate from '@turf/transform-translate';
 import { point } from '@turf/helpers';
 import midpoint from '@turf/midpoint';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import {
-	INearestResponse,
 	IRouteResponse,
 	IRouteItem,
 	IPointAndRoute,
 	IIsochroneResponse,
+	EPSG3857,
+	LonLat,
 } from './MapUtils.d';
-import { GeoJSONPoint } from 'ol/format/GeoJSON';
 
 const getIsochroneFromApi = (
-	currentLocation: Coordinate,
+	currentLocation: EPSG3857,
 	maxDistance: number,
 	minDistance: number
-): Promise<Coordinate[]> => {
+): Promise<LonLat[]> => {
 	/**
 	 * Get the isochrone (min-max range for random generation) for the random generation.
 	 *
@@ -48,89 +47,48 @@ const getIsochroneFromApi = (
 	});
 };
 
-export const getRouteFromApi = (start: Coordinate, end: Coordinate): Promise<IRouteItem> => {
-	/*
+export const getRouteFromApi = (start: EPSG3857, end: EPSG3857): Promise<IRouteItem> => {
+	/** 
         Get an optimal route from the OSRM API.
         @param start - Start EPSG:3857 coordinate.
         @param end - End EPSG:3857 coordinate.
 
         @returns Promise<IRouteItem> - Found route from the API.
     */
+	start = toLonLat(start);
+	end = toLonLat(end);
+	const [startObject, endObject] = [{lon: start[0], lat: start[1], type: 'break'}, {lon: end[0], lat: end[1], type: 'break'}]
 	return new Promise((resolve, reject) => {
-		const points = [toLonLat(start), toLonLat(end)];
-		fetch(`http://router.project-osrm.org/route/v1/foot/${points.join(';')}`)
-			.then((resp: Response) => {
-				return resp.json();
+		fetch(
+			`https://valhalla1.openstreetmap.de/route?json={"locations":${JSON.stringify([startObject, endObject])},"costing":"pedestrian"}`
+		).then((res) => {
+			if (res.status === 200) return res.json();
+			reject(
+				res.json().then((json) => {
+					return json.error;
+				})
+			);
+		})
+		.then((data: IRouteResponse) => {
+			resolve({
+				distance: data.trip.summary.length,
+				duration: data.trip.summary.time,
+				routeShape: data.trip.legs[0].shape
 			})
-			.then((data: IRouteResponse) => {
-				if (data.code !== 'Ok') reject(data.code);
-				else {
-					resolve(data.routes![0]);
-				}
-			})
-			.catch(() => reject('Unknown error'));
+		});
 	});
 };
 
-export const getNearestFromApi = (coords: Coordinate): Promise<Coordinate> => {
-	/*
-        Get the nearest point on a street network for a given coordinate.
 
-        @param coords - Initial coordinate EPSG:3857
-
-        @returns Promise<Coordinate> - Nearest coordinate on a street EPSG:3857
-    */
-	return new Promise((resolve, reject) => {
-		const longLat = toLonLat(coords);
-		fetch(`http://router.project-osrm.org/nearest/v1/foot/${longLat.join()}`)
-			.then((resp: Response) => {
-				return resp.json();
-			})
-			.then((data: INearestResponse) => {
-				if (data.code !== 'Ok') reject();
-				else {
-					const transformedResponseCoords = fromLonLat(data.waypoints![0].location!);
-					resolve(transformedResponseCoords);
-				}
-			})
-			.catch(() => reject());
-	});
-};
-
-const generateRandomPoint = (
-	currentLocation: GeoJSONPoint,
-	minDistance: number,
-	maxDistance: number,
-	minHeading: number,
-	maxHeading: number
-) => {
-	/*
-    Generate a new random point based on parameters.
-    @param currentLocation - Current user location.
-    @param minDistance - Minimum distance from current user location.
-    @param maxDistance - Maximum distance from current user location.
-    @param minHeading - Minimum heading in degress (0-359).
-    @param maxHeading - Maximum heading in degress (0-359).
-
-    @returns GeoJSONPoint - found point
-    */
-	const currentLocationPoint = point(currentLocation.coordinates);
-	const distance = randomFloat(minDistance, maxDistance);
-	const heading = randomFloat(minHeading, maxHeading);
-	return transformTranslate(currentLocationPoint, distance, heading, {
-		units: 'kilometers',
-	});
-};
-
-export const generatePointToRun = async (
-	currentLocation: Coordinate,
+export const handleRandomPointRequest = async (
+	currentLocation: EPSG3857,
 	minDistance: number,
 	maxDistance: number,
 	minHeading: number,
 	maxHeading: number
 ): Promise<IPointAndRoute> => {
 	/*
-        Handle user asking for a random point - generate points until a valid one is found.
+        Handle user asking for a random point - Generate one from an isochrone.
 
         @param currentLocation - Current user location (EPSG:3857).
         @param minDistance - Minimum distance from current user location.
@@ -141,67 +99,73 @@ export const generatePointToRun = async (
         @returns CoordAndFeature - found point feature (EPSG:3857).
 
     */
-	const userLocationGeoJson: { type: 'Point'; coordinates: number[] } = {
-		type: 'Point',
-		coordinates: toLonLat(currentLocation),
-	};
-	let isRouteFound = false;
-	let foundPoint = undefined;
-	let generatedRoute;
-	do {
-		const rawGeneratedPoint = generateRandomPoint(
-			userLocationGeoJson,
-			minDistance,
-			maxDistance,
-			minHeading,
-			maxHeading
+	const possiblePoints = await getIsochroneFromApi(currentLocation, maxDistance, minDistance);
+	possiblePoints.forEach((point: LonLat, i: number, arr: Coordinate[]) => {
+		arr[i] = fromLonLat(point);
+	});
+	let bestPoint: { angleDifference: number; point: EPSG3857 } | undefined = undefined;
+	const chosenHeading = Math.random() * (maxHeading - minHeading + 1) + minHeading;
+	for (const possiblePoint of possiblePoints) {
+		const currentAngleDifference = Math.abs(
+			getAngleBetweenPoints(currentLocation, possiblePoint) - chosenHeading
 		);
-		try {
-			foundPoint = await getNearestFromApi(
-				fromLonLat(rawGeneratedPoint.geometry.coordinates)
-			);
-			generatedRoute = await getRouteFromApi(currentLocation, foundPoint);
-			console.log(generatedRoute.distance);
-			if (
-				generatedRoute.distance <= maxDistance * 1000 &&
-				generatedRoute.distance >= minDistance * 1000
-			)
-				isRouteFound = true;
-		} catch (err) {
-			console.error(err);
+		console.log(`wanted angle for ${possiblePoint} - ${chosenHeading}deg - angle is ${getAngleBetweenPoints(currentLocation, possiblePoint)}`)
+		if (!bestPoint || currentAngleDifference < bestPoint.angleDifference) {
+			bestPoint = { angleDifference: currentAngleDifference, point: possiblePoint };
 		}
-	} while (!isRouteFound);
-	return { route: generatedRoute, point: foundPoint! };
+	}
+	console.log(`Selected point angle ${getAngleBetweenPoints(currentLocation, bestPoint!.point)}`)
+	const createdRoute = await getRouteFromApi(currentLocation, bestPoint!.point)
+	return {point: bestPoint!.point, route: createdRoute}
+	
 };
 
-export const getMidpoint = (start: Coordinate, end: Coordinate): Coordinate => {
+export const getMidpoint = (start: EPSG3857, end: EPSG3857): EPSG3857 => {
 	/**
 	 * Get the midpoint between two points on a map.
 	 *
-	 * @param start - 1st point
-	 * @param end   - 2nd point
+	 * @param start - 1st point EPSG3857
+	 * @param end   - 2nd point EPSG3857
 	 *
-	 * @returns Coordinate - The found midpoint
+	 * @returns Coordinate - The found midpoint EPSG3857
 	 */
 	const [startLonLat, endLonLat] = [point(toLonLat(start)), point(toLonLat(end))];
 	const midpointLonLat = midpoint(startLonLat, endLonLat);
 	return fromLonLat(midpointLonLat.geometry.coordinates);
 };
 
-export const getRouteDistance = async (point1: Coordinate, point2: Coordinate): Promise<number> => {
+export const getRouteDistance = async (point1: EPSG3857, point2: EPSG3857): Promise<number> => {
 	/**
 	 * Get the road distance (not line) between two points.
 	 *
 	 * @param point1 - 1st point EPSG:3857
 	 * @param point2 - 2nd point EPSG:3857
 	 *
-	 * @returns number - Distance in meters
+	 * @returns number - Distance in kilometers
 	 */
 	const route = await getRouteFromApi(point1, point2);
 	return route.distance;
 };
 
-export const getLineDistance = (point1: Coordinate, point2: Coordinate): number => {
+const getAngleBetweenPoints = (point1: EPSG3857, point2: EPSG3857): number => {
+	/**
+	 * Get the angle (in degrees) between two points - Compass heading (0 degress is vertical)
+	 * @param point1 - 1st point EPSG:3857
+	 * @param point2 - 2nd point EPSG:3857
+	 *
+	 * @returns number - Angle in degress
+	 */
+	const dx = point1[0] - point2[0]
+	const dy = point1[1] - point2[1];
+	let radiansAngle;
+	if (dy || dx)
+		radiansAngle = Math.atan2(dy, dx);
+	else radiansAngle = 0;
+	if (radiansAngle < 0) radiansAngle += 2*Math.PI;
+	return 360 - ((radiansAngle + 0.5*Math.PI) * 180 / Math.PI)
+};
+
+export const getLineDistance = (point1: EPSG3857, point2: EPSG3857): number => {
 	/**
 	 * Get the line between two points.
 	 *
@@ -211,16 +175,4 @@ export const getLineDistance = (point1: Coordinate, point2: Coordinate): number 
 	 * @returns number - Distance in meters
 	 */
 	return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
-};
-
-const randomFloat = (min: number, max: number): number => {
-	/**
-	 * Generate a random float number between two boundaries.
-	 *
-	 * @param min
-	 * @param max
-	 * @returns a random number.
-	 *
-	 */
-	return Math.random() * (max - min) + min;
 };

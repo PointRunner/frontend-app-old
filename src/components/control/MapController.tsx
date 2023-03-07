@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { IPointAndRoute } from '../../utils/MapUtils.d';
-import { generatePointToRun } from '../../utils/MapUtils';
+import { handleRandomPointRequest } from '../../utils/MapUtils';
 import {
 	generateRouteFunction,
 	userLocationState,
@@ -20,7 +20,7 @@ const MapController = (props: { children: JSX.Element | JSX.Element[] }) => {
 		Generate a random route when user clicks - uses RecoilState variables.
 		*/
 		if (userLocation) {
-			const results: IPointAndRoute = await generatePointToRun(
+			const results: IPointAndRoute = await handleRandomPointRequest(
 				userLocation,
 				routeGenerationParmas.minDistance!,
 				routeGenerationParmas.maxDistance!,

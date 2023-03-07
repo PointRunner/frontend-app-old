@@ -79,7 +79,7 @@ const TopBarInfo = (props: TopBarInfoProps) => {
 					</IonCol>
 					<IonCol>
 						<TopBarInfoText textColor={props.textColor}>
-							{(props.runningStats.distanceLeft / 1000).toFixed(2)}km Left
+							{(props.runningStats.distanceLeft).toFixed(2)}km Left
 						</TopBarInfoText>
 					</IonCol>
 				</IonRow>

@@ -1,5 +1,8 @@
 import { Coordinate } from "ol/coordinate";
 
+export type EPSG3857 = Coordinate;
+export type LonLat = Coordinate;
+
 export interface INearestResponse {
 	code: string;
 	waypoints?: {
@@ -16,7 +19,7 @@ export interface IIsochroneResponse {
 			[key: string]: number | string
 		},
 		geometry: {
-			coordinates: Coordinate[],
+			coordinates: LonLat[],
 			type: string
 		}
 		type: string
@@ -27,20 +30,21 @@ export interface IIsochroneResponse {
 export interface IRouteItem {
 	distance: number;
 	duration: number;
-	geometry: {
-		type: 'string';
-		coordinates: Coordinate[];
-	};
+	routeShape: IRouteGeometry;
 }
 export interface IRouteResponse {
-	code: string;
-	routes?: IRouteItem[];
+	trip: {
+		summary: {
+			time: number,
+			length: number
+		},
+		legs: {
+			shape: string
+		}[]
+	}
 }
 
-export interface IRouteGeometry {
-	type: string;
-	coordinates: Coordinate[];
-}
+export type IRouteGeometry = string | LonLat[];
 
 export interface CoordAndFeature {
 	coordinates: Coordinate;
@@ -58,6 +62,6 @@ export interface IRouteGenerationParams {
 }
 
 export interface IPointAndRoute {
-	point: Coordinate,
+	point: EPSG3857,
 	route?: IRouteItem
 }

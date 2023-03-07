@@ -24,7 +24,7 @@ import {
 	IRouteGeometry,
 	IRouteItem,
 } from '../../../utils/MapUtils.d';
-import { getNearestFromApi, getRouteFromApi } from '../../../utils/MapUtils';
+import { getRouteFromApi } from '../../../utils/MapUtils';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
 	centerViewFunction,
@@ -63,6 +63,7 @@ const nextLocationMapPin = new Style({
 const routeStyle = new Style({
 	stroke: new Stroke({
 		width: 5,
+		color: 'green',
 	}),
 });
 
@@ -84,7 +85,7 @@ const MapWrapper: React.FC = () => {
 
 			@param foundRoute - Route that has been found, already in EPSG:3857
 		*/
-		const routePolyline = new Polyline({ factor: 1e5 }).readGeometry(foundRoute, {
+		const routePolyline = new Polyline({ factor: 1e6 }).readGeometry(foundRoute, {
 			dataProjection: 'EPSG:4326',
 			featureProjection: 'EPSG:3857',
 		});
@@ -150,8 +151,9 @@ const MapWrapper: React.FC = () => {
 				 * Update the map to show the randomly-generated route and point from state.
 				 */
 				clearPreviousRoute();
-				drawRoute(route.geometry);
+				drawRoute(route.routeShape);
 				fitMapViewToPoints(userLocationRef.current!.coordinates, newPoint);
+				console.log(featuresLayerSourceRef.current?.getFeatures());
 			};
 
 			updateLocationRef(newPoint, nextPointLocationRef, nextLocationMapPin);
@@ -162,6 +164,7 @@ const MapWrapper: React.FC = () => {
 
 	useEffect(() => {
 		if (nextPointAndRoute?.point && nextPointAndRoute.route) {
+			console.log(nextPointAndRoute);
 			handleNewPoint(nextPointAndRoute.point, nextPointAndRoute.route);
 		}
 	}, [handleNewPoint, nextPointAndRoute, updateLocationRef]);
@@ -174,17 +177,15 @@ const MapWrapper: React.FC = () => {
 			@param event - Browser click event.
 			*/
 			if (!mapRef.current) return;
-			getNearestFromApi(event.coordinate).then((nearestPoint: Coordinate) => {
-				getRouteFromApi(userLocationRef.current!.coordinates, nearestPoint).then(
-					(foundRoute: IRouteItem) => {
-						setNextPointAndRoute({
-							point: nearestPoint,
-							route: foundRoute,
-						});
-						setLayoutDisplayMode('default');
-					}
-				);
-			});
+			getRouteFromApi(userLocationRef.current!.coordinates, event.coordinate).then(
+				(foundRoute: IRouteItem) => {
+					setNextPointAndRoute({
+						point: event.coordinate,
+						route: foundRoute,
+					});
+					setLayoutDisplayMode('default');
+				}
+			);
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[updateLocationRef]
@@ -206,9 +207,8 @@ const MapWrapper: React.FC = () => {
 		);
 		if (!userLocationRef.current || !areLocationsEqual) {
 			updateLocationRef(userLocation, userLocationRef, userMapPin);
-			centerViewOnCurrentLocation();
 		}
-	}, [centerViewOnCurrentLocation, updateLocationRef, userLocation]);
+	}, [updateLocationRef, userLocation]);
 
 	useEffect(() => {
 		if (mapElement.current && !mapRef.current) {

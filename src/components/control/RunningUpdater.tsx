@@ -81,7 +81,7 @@ const RunningUpdater = () => {
 					secondsElapsed: old.secondsElapsed + POLLING_RATE_MS / 1000,
 				};
 			});
-			if (newDistance <= RANGE_FOR_COMPLETION_METERS) completeRun();
+			if (newDistance <= (RANGE_FOR_COMPLETION_METERS / 1000)) completeRun();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
