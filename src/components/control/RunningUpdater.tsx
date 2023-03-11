@@ -200,8 +200,6 @@ const RunningUpdater = () => {
 		});
 	};
 
-	useEffect(() => console.log('current', runningStats), [runningStats]);
-
 	useEffect(() => {
 		userLocationRef.current = userLocation;
 		nextPointAndRouteRef.current = nextPointAndRoute;

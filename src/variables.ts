@@ -1,6 +1,7 @@
 const variables = {
     primaryColor: '#37ac0a',
     primaryColorDarker: '#2c9702',
+    primaryColorLighter: '#47cf11',
     darkColor: '#222222',
     disabledColor: '#aaaaaa',
     menuBackgroundColor: '#ffffff',

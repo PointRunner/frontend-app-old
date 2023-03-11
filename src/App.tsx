@@ -1,4 +1,9 @@
-import { IonApp, IonContent, IonPage, setupIonicReact } from '@ionic/react';
+import {
+	IonApp,
+	IonContent,
+	IonPage,
+	setupIonicReact,
+} from '@ionic/react';
 
 import { RecoilRoot } from 'recoil';
 
@@ -27,15 +32,16 @@ import Home from './pages/Home';
 setupIonicReact();
 
 const App: React.FC = () => (
-		<IonApp>
+	<IonApp>
+		<RecoilRoot>
 			<IonPage>
 				<IonContent>
-					<RecoilRoot>
-						<Home />
-					</RecoilRoot>
+					<Home />
 				</IonContent>
+			
 			</IonPage>
-		</IonApp>
+		</RecoilRoot>
+	</IonApp>
 );
 
 export default App;

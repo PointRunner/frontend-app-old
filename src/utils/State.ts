@@ -5,11 +5,13 @@ import { displayMode } from '../components/layout/LayoutController/LayoutControl
 import { ERRORS, IRunningStats } from './interfaces/interfaces';
 
 const defaultRouteGenerationParams: IRouteGenerationParams = {
-	minDistance: 1,
-	maxDistance: 5,
-	minHeading: 0,
-	maxHeading: 359,
+	routeGenerationMode: 'distance',
+	distanceValues: [1, 10],
+	timeValues: [1, 100],
+	headingValues: [0, 359],
 	showRoute: true,
+	directionFlipped: false,
+	keepGenerating: true,
 };
 
 export const initialRunningStats: IRunningStats = {
@@ -22,8 +24,8 @@ export const initialRunningStats: IRunningStats = {
 	passedPoints: 0
 };
 
-export const routeGenerationParams = atom<IRouteGenerationParams>({
-	key: 'routeGenerationParams',
+export const routeGenerationParamsState = atom<IRouteGenerationParams>({
+	key: 'routeGenerationParamsState',
 	default: defaultRouteGenerationParams,
 });
 

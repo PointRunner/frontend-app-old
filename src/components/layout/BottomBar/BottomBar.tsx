@@ -5,7 +5,6 @@ import {
 } from './Styles.BottomBar';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { layoutDisplayModeState, nextPointAndRouteState } from '../../../utils/State';
-import RandomPoint from './RandomPoint/RandomPoint';
 import SelectPoint from './SelectPoint/SelectPoint';
 import { displayMode } from '../LayoutController/LayoutController.d';
 import Default from './Default/Default';
@@ -54,8 +53,7 @@ const BottomBar = (props: IBottomBarProps) => {
 		<BottomBarWrapper className={isExpanded ? 'expanded' : ''}>
 			{(() => {
 				switch (props.menuDisplayMode) {
-					case 'random':
-						return <RandomPoint />;
+
 					case 'select':
 						return <SelectPoint />;
 					case 'running':

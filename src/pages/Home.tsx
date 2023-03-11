@@ -6,7 +6,7 @@ import LayoutController from '../components/layout/LayoutController/LayoutContro
 const Home: React.FC = () => {
 	return <>
 	<RunningUpdater />
-	<LayoutController />;
+	<LayoutController />
 	</>
 };
 

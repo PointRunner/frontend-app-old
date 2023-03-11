@@ -153,7 +153,6 @@ const MapWrapper: React.FC = () => {
 				clearPreviousRoute();
 				drawRoute(route.routeShape);
 				fitMapViewToPoints(userLocationRef.current!.coordinates, newPoint);
-				console.log(featuresLayerSourceRef.current?.getFeatures());
 			};
 
 			updateLocationRef(newPoint, nextPointLocationRef, nextLocationMapPin);
@@ -164,7 +163,6 @@ const MapWrapper: React.FC = () => {
 
 	useEffect(() => {
 		if (nextPointAndRoute?.point && nextPointAndRoute.route) {
-			console.log(nextPointAndRoute);
 			handleNewPoint(nextPointAndRoute.point, nextPointAndRoute.route);
 		}
 	}, [handleNewPoint, nextPointAndRoute, updateLocationRef]);

@@ -48,6 +48,7 @@ const LayoutController = () => {
 				<MapWrapper />
 			</MapController>
 			<BottomBar menuDisplayMode={layoutDisplayMode} />
+			
 		</>
 	);
 };

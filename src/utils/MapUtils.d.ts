@@ -3,6 +3,8 @@ import { Coordinate } from "ol/coordinate";
 export type EPSG3857 = Coordinate;
 export type LonLat = Coordinate;
 
+export type routeGenerationMode = 'distance' | 'time'
+
 export interface INearestResponse {
 	code: string;
 	waypoints?: {
@@ -53,11 +55,13 @@ export interface CoordAndFeature {
 
 
 export interface IRouteGenerationParams {
-	minDistance?: number;
-	maxDistance?: number;
-	minHeading?: number;
-	maxHeading?: number;
-	showRoute?: boolean;
+	routeGenerationMode: routeGenerationMode;
+	directionFlipped: boolean;
+	distanceValues: number[];
+	timeValues: number[];
+	headingValues: number[];
+	showRoute: boolean;
+	keepGenerating: boolean;
 	
 }
 
