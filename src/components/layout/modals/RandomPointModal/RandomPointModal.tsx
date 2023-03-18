@@ -26,8 +26,8 @@ import {
 
 const timeSelectionModeIcon = (
 	<svg
-		width="24px"
-		height="24px"
+		width="16px"
+		height="16px"
 		viewBox="0 0 24 24"
 		fill="none"
 		xmlns="http://www.w3.org/2000/svg"
@@ -35,17 +35,17 @@ const timeSelectionModeIcon = (
 		<path
 			d="M10 3H14M12 9V13L14 15M20 13C20 17.4183 16.4183 21 12 21C7.58172 21 4 17.4183 4 13C4 8.58172 7.58172 5 12 5C16.4183 5 20 8.58172 20 13Z"
 			stroke="#000000"
-			stroke-width="1.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
+			strokeWidth="1.5"
+			strokeLinecap="round"
+			strokeLinejoin="round"
 		/>
 	</svg>
 );
 
 const distanceSelectionModeIcon = (
 	<svg
-		width="24px"
-		height="24px"
+		width="16px"
+		height="16px"
 		viewBox="0 0 24 24"
 		fill="none"
 		xmlns="http://www.w3.org/2000/svg"
@@ -97,30 +97,28 @@ const RandomPointModal = (props: { closingFunction: () => void }) => {
 			</ModalHeader>
 			<ModalBody>
 				<h1 style={{ textAlign: 'center' }}>Mode</h1>
-				<label>
-					<RandomPointModeSelector>
-						<span className="first flex-item">{timeSelectionModeIcon} Time</span>
-						<Switch
-							className="switch"
-							width={64}
-							handleDiameter={32}
-							onChange={(checked) =>
-								updateGenerationParam(
-									'routeGenerationMode',
-									checked ? 'distance' : 'time'
-								)
-							}
-							checked={routeGenerationParams.routeGenerationMode === 'distance'}
-							offColor={variables.menuBackgroundColorDarker}
-							offHandleColor={variables.primaryColor}
-							onColor={variables.menuBackgroundColorDarker}
-							onHandleColor={variables.primaryColor}
-							checkedIcon={false}
-							uncheckedIcon={false}
-						/>
-						<span className="last flex-item">Distance {distanceSelectionModeIcon}</span>
-					</RandomPointModeSelector>
-				</label>
+				<RandomPointModeSelector>
+					<span className="first flex-item">{timeSelectionModeIcon} Time</span>
+					<Switch
+						className="switch"
+						width={64}
+						handleDiameter={32}
+						onChange={(checked) =>
+							updateGenerationParam(
+								'routeGenerationMode',
+								checked ? 'distance' : 'time'
+							)
+						}
+						checked={routeGenerationParams.routeGenerationMode === 'distance'}
+						offColor={variables.menuBackgroundColorDarker}
+						offHandleColor={variables.primaryColor}
+						onColor={variables.menuBackgroundColorDarker}
+						onHandleColor={variables.primaryColor}
+						checkedIcon={false}
+						uncheckedIcon={false}
+					/>
+					<span className="last flex-item">Distance {distanceSelectionModeIcon}</span>
+				</RandomPointModeSelector>
 				<ModalInputRow>
 					<ModalInputLabelGroup
 						className={

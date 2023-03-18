@@ -1,9 +1,6 @@
-import {
-	IonApp,
-	IonContent,
-	IonPage,
-	setupIonicReact,
-} from '@ionic/react';
+import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { IonReactRouter } from '@ionic/react-router';
+import { Redirect, Route } from 'react-router';
 
 import { RecoilRoot } from 'recoil';
 
@@ -28,18 +25,22 @@ import './theme/variables.css';
 
 /* Local modules */
 import Home from './pages/Home';
+import Profile from './pages/Profile';
+import Social from './pages/Social';
 
 setupIonicReact();
 
 const App: React.FC = () => (
 	<IonApp>
 		<RecoilRoot>
-			<IonPage>
-				<IonContent>
-					<Home />
-				</IonContent>
-			
-			</IonPage>
+			<IonReactRouter>
+				<IonRouterOutlet animated={true} >
+					<Route path="/index" component={Home} />
+					<Route path="/profile" component={Profile} />
+					<Route path="/social" component={Social} />
+					<Redirect exact from="/" to="/index" />
+				</IonRouterOutlet>
+			</IonReactRouter>
 		</RecoilRoot>
 	</IonApp>
 );

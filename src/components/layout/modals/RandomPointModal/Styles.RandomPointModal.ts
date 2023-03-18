@@ -3,7 +3,7 @@ import styled from "styled-components";
 import variables from "../../../../variables";
 
 export const RandomPointModeSelector = styled.div`
-    margin: 0 15vw;
+    margin: 0 10vw;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -17,10 +17,14 @@ export const RandomPointModeSelector = styled.div`
 
     & > span.first {
         text-align: start;
+        display: flex;
+        align-items: center;
     }
 
     & > span.last {
-        text-align: end;
+        display: flex;
+        align-items: center;
+        justify-content: end;
     }
 `
 
