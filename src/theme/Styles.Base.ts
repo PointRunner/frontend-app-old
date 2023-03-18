@@ -1,3 +1,4 @@
+import { IonContent } from '@ionic/react';
 import styled from 'styled-components';
 import variables from '../variables';
 
@@ -20,3 +21,9 @@ font-size: ${variables.sizes.fontMedium};
     scale: 110%;
     background-color: ${variables.primaryColorDarker};
 `;
+
+
+export const BaseContent = styled(IonContent)`
+    --ion-background-color: linear-gradient(to bottom, ${variables.menuBackgroundColor} 90%, ${variables.menuBackgroundColorDarker})
+
+`

@@ -1,13 +1,14 @@
-import { IonBackButton, IonContent, IonPage } from '@ionic/react';
+import { IonBackButton, IonPage } from '@ionic/react';
+import { BaseContent } from '../theme/Styles.Base';
 
 const Social: React.FC = () => {
 	return (
 		<IonPage>
-			<IonContent>
+			<BaseContent>
 				<div>
 					Social <IonBackButton />
 				</div>
-			</IonContent>
+			</BaseContent>
 		</IonPage>
 	);
 };

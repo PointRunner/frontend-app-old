@@ -1,7 +1,6 @@
 import { Animation, createAnimation } from '@ionic/react';
 
 export const pageSwitchAnimations = (baseEl: HTMLElement, opts?: any): Animation => {
-	console.log(opts);
 	const enteringAnimation = createAnimation()
 		.addElement(opts.enteringEl)
 		.fromTo('transform', `translate(${opts.animationDirection === 'right' ? '-' : ''}100%)`, 'translate(0%)')
